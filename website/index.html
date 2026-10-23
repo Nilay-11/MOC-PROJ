@@ -1,6 +1,6 @@
 <title>PhishDFA</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<meta name="description" content="Rule-based phishing URL detector built on regular languages and finite automata. MOC mini project by Nilay Sengupta and Adwit Agarwal.">
+<meta name="description" content="Rule-based phishing URL detector built on finite automata. MOC mini project by Nilay Sengupta and Adwit Agarwal.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
@@ -389,6 +389,27 @@ footer { border-top: 1px solid var(--line); padding-block: 48px; color: var(--mu
 .team-row div { display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px dashed var(--line); padding-bottom: 6px; }
 .team-row span:last-child { font-family: var(--font-mono); color: var(--fg); }
 
+
+.how { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; counter-reset: none; }
+@media (max-width: 900px) { .how { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 520px) { .how { grid-template-columns: 1fr; } }
+.how li { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.how .idx { font: 700 .8rem var(--font-mono); color: var(--accent); border: 1px solid var(--accent); border-radius: 6px; padding: 2px 8px; justify-self: start; }
+.how p { color: var(--muted); font-size: .92rem; }
+.how code { color: var(--accept); font-size: .85rem; }
+.misses { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 16px; font-size: .82rem; color: var(--muted); }
+.misses span.m { font: .76rem var(--font-mono); border: 1px solid var(--line); border-radius: 999px; padding: 3px 9px; }
+.lab-flow { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 18px 0; }
+.lab-flow .box { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 16px; display: grid; gap: 2px; min-width: 120px; }
+.lab-flow .box b { font: 800 1.7rem/1 var(--font-display); font-variant-numeric: tabular-nums; }
+.lab-flow .box span { font-size: .8rem; color: var(--muted); }
+.lab-flow .arr { color: var(--accent); font: 700 1.2rem var(--font-mono); }
+.tabs { display: inline-flex; gap: 4px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 4px; }
+.tab { appearance: none; border: 0; background: transparent; color: var(--muted); font: 600 .9rem var(--font-body); padding: 7px 14px; border-radius: 7px; cursor: pointer; }
+.tab[aria-selected="true"] { background: var(--accent); color: var(--bg); }
+.kpis { grid-template-columns: repeat(3, 1fr); }
+@media (max-width: 760px) { .kpis { grid-template-columns: 1fr; } }
+
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   * { transition: none !important; animation: none !important; }
@@ -402,11 +423,10 @@ footer { border-top: 1px solid var(--line); padding-block: 48px; color: var(--mu
       PhishDFA
     </a>
     <ul>
-      <li><a href="#analyzer">Analyzer</a></li>
-      <li><a href="#simulator">DFA Simulator</a></li>
-      <li><a href="#construction">Regex → NFA → DFA</a></li>
-      <li><a href="#theory">Theory</a></li>
-      <li><a href="#architecture">Architecture</a></li>
+      <li><a href="#how">How it works</a></li>
+      <li><a href="#analyzer">Try it</a></li>
+      <li><a href="#simulator">Watch a DFA</a></li>
+      <li><a href="#construction">Build a DFA</a></li>
       <li><a href="#results">Results</a></li>
     </ul>
   </div>
@@ -417,19 +437,19 @@ footer { border-top: 1px solid var(--line); padding-block: 48px; color: var(--mu
     <div>
       <span class="eyebrow">MOC Mini Project <b>/</b> Theory of Computation</span>
       <h1>Catching phishing URLs with <em>finite automata</em>.</h1>
-      <p class="lead">A URL is just a string over an alphabet Σ. We describe suspicious patterns as regular languages, compile each one from a regular expression into a minimal DFA, and let those machines read the URL one character at a time. Their verdicts, plus a few structural rules, add up to an explainable risk score.</p>
+      <p class="lead">A URL is just a string. We turn each suspicious pattern, like <code>login</code>, <code>@</code> or an IP address, into a small DFA. The DFAs read the URL one character at a time, and every pattern they find adds to a risk score.</p>
       <div class="hero-meta">
         <span class="chip"><strong>Nilay Sengupta</strong> 25BYB0255</span>
         <span class="chip"><strong>Adwit Agarwal</strong> 25BYB0116</span>
       </div>
       <div class="cta">
-        <a class="btn primary" href="#analyzer">Analyze a URL</a>
-        <a class="btn" href="#construction">See the automata being built</a>
+        <a class="btn primary" href="#analyzer">Try a URL</a>
+        <a class="btn" href="#simulator">Watch a DFA work</a>
       </div>
     </div>
     <div class="machine" aria-label="Animated DFA for the keyword login reading a URL">
       <div class="machine-top">
-        <span>M<sub>login</sub> reads <span id="hero-input"></span></span>
+        <span>DFA for “login” reads <span id="hero-input"></span></span>
         <span class="verdict" id="hero-verdict">running</span>
       </div>
       <div class="diagram" id="hero-diagram"></div>
@@ -439,19 +459,34 @@ footer { border-top: 1px solid var(--line); padding-block: 48px; color: var(--mu
 </header>
 
 <main>
-<section class="band" id="analyzer">
+<section class="band" id="how">
   <div class="wrap">
     <div class="sec-head">
-      <span class="eyebrow">Module 1 + 3 <b>/</b> Live analyzer</span>
-      <h2>Paste a URL. Thirteen DFAs read it.</h2>
-      <p>The URL is lower-cased, split into its components, and handed to one minimal DFA per suspicious pattern. Each DFA either ends in an accepting state (pattern found) or not. Structural rules that are simpler as plain code run alongside them.</p>
+      <span class="eyebrow">How it works</span>
+      <h2>Four steps from pattern to verdict.</h2>
+    </div>
+    <ol class="how">
+      <li><span class="idx">1</span><h3>Write the pattern</h3><p>Each warning sign is a regular expression.</p><code>.*login.*</code></li>
+      <li><span class="idx">2</span><h3>Regex → NFA</h3><p>The expression is converted into an NFA.</p><code>18 states</code></li>
+      <li><span class="idx">3</span><h3>NFA → minimal DFA</h3><p>The NFA becomes a DFA, then the smallest possible DFA.</p><code>6 states</code></li>
+      <li><span class="idx">4</span><h3>Read the URL</h3><p>If the DFA ends in an accepting state, the pattern was found and points are added.</p><code>score ≥ 4 → High Risk</code></li>
+    </ol>
+  </div>
+</section>
+
+<section class="band alt" id="analyzer">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Try it</span>
+      <h2>Paste a URL.</h2>
+      <p>13 DFAs read it. Each pattern found adds points: 0–1 is Low Risk, 2–3 Suspicious, 4 or more High Risk.</p>
     </div>
     <form class="analyze-form" id="analyze-form">
-      <label for="url-input" class="panel-label" style="position:absolute;left:-9999px">URL to analyze</label>
-      <input id="url-input" type="text" spellcheck="false" autocomplete="off" value="http://secure-update.mybank.verify.example.net/account/login">
+      <label for="url-input" style="position:absolute;left:-9999px">URL to analyze</label>
+      <input id="url-input" type="text" spellcheck="false" autocomplete="off" value="http://mybank.com@203.0.113.7/confirm">
       <button class="btn primary" type="submit">Analyze</button>
     </form>
-    <div class="samples" id="samples"><span>Try:</span></div>
+    <div class="samples" id="samples"><span>Examples:</span></div>
 
     <div class="result-grid">
       <div class="panel">
@@ -460,24 +495,19 @@ footer { border-top: 1px solid var(--line); padding-block: 48px; color: var(--mu
           <svg viewBox="0 0 240 140" id="gauge" aria-hidden="true"></svg>
           <div class="score" id="score">0</div>
           <div id="class-pill"></div>
-          <div class="thresholds">
-            <div style="border-color:var(--low)">0–1<br>Low Risk</div>
-            <div style="border-color:var(--mid)">2–3<br>Suspicious</div>
-            <div style="border-color:var(--high)">≥ 4<br>High Risk</div>
-          </div>
         </div>
         <table class="breakdown" id="breakdown"></table>
       </div>
       <div style="display:grid;gap:20px;min-width:0">
         <div class="panel">
-          <span class="panel-label">Component extraction</span>
+          <span class="panel-label">The URL in parts</span>
           <div class="urlbar" id="urlbar"></div>
           <dl class="comp-list" id="comp-list"></dl>
         </div>
         <div class="panel">
-          <span class="panel-label">Automata verdicts <span id="dfa-count"></span></span>
+          <span class="panel-label">Patterns found <span id="dfa-count"></span></span>
           <div class="findings" id="findings"></div>
-          <span class="panel-label" style="margin-top:22px">Structural rules</span>
+          <div class="misses" id="misses"></div>
           <div class="rules" id="rules"></div>
         </div>
       </div>
@@ -485,254 +515,77 @@ footer { border-top: 1px solid var(--line); padding-block: 48px; color: var(--mu
   </div>
 </section>
 
-<section class="band alt" id="simulator">
+<section class="band" id="simulator">
   <div class="wrap">
     <div class="sec-head">
-      <span class="eyebrow">Module 2 <b>/</b> MOC automata engine</span>
-      <h2>Step through the computation.</h2>
-      <p>Pick a pattern and watch its DFA apply the transition function δ(q, a) to each symbol of the input. The highlighted cell in the table is the transition being taken. When the input ends, the string is accepted exactly when the machine is in a state of F.</p>
+      <span class="eyebrow">Watch a DFA</span>
+      <h2>One character, one step.</h2>
+      <p>Pick a pattern and press Play. The blue circle is the current state. The gold double circle is the accepting state: reaching it means the pattern was found.</p>
     </div>
-    <div class="sim">
-      <div class="panel">
-        <div class="controls">
-          <label for="sim-pattern">Pattern</label>
-          <select id="sim-pattern"></select>
-          <label><input type="checkbox" id="sim-dead"> show dead state</label>
-        </div>
-        <div class="controls" style="margin-top:10px">
-          <input type="text" id="sim-input" spellcheck="false" aria-label="Input string">
-        </div>
-        <div class="diagram" id="sim-diagram" style="margin-top:14px"></div>
-        <div class="tape-wrap" id="sim-tape-wrap"><div class="tape" id="sim-tape"></div></div>
-        <div class="transport">
-          <button class="btn small" id="sim-reset" title="Back to the start state">⏮ Reset</button>
-          <button class="btn small" id="sim-back">◀ Step</button>
-          <button class="btn small primary" id="sim-play">▶ Play</button>
-          <button class="btn small" id="sim-fwd">Step ▶</button>
-          <button class="btn small" id="sim-end">Run to end ⏭</button>
-          <label style="font-size:.82rem;color:var(--muted);display:flex;gap:8px;align-items:center;margin-left:auto">speed <input type="range" id="sim-speed" min="1" max="10" value="5"></label>
-        </div>
-        <div class="step-note" id="sim-note"></div>
+    <div class="panel">
+      <div class="controls">
+        <label for="sim-pattern">Pattern</label>
+        <select id="sim-pattern"></select>
+        <input type="text" id="sim-input" spellcheck="false" aria-label="Input string">
       </div>
-      <div class="panel">
-        <span class="panel-label">Formal definition</span>
-        <div class="tuple" id="sim-tuple"></div>
-        <span class="panel-label" style="margin-top:20px">Transition table δ</span>
-        <div class="tt-wrap" id="sim-table"></div>
-        <p class="note" style="margin-top:10px">→ start state, * accepting state. Columns are symbol classes: characters the pattern cannot tell apart share one column.</p>
+      <div class="diagram" id="sim-diagram" style="margin-top:14px"></div>
+      <div class="tape-wrap" id="sim-tape-wrap"><div class="tape" id="sim-tape"></div></div>
+      <div class="transport">
+        <button class="btn small" id="sim-reset">⏮ Reset</button>
+        <button class="btn small" id="sim-back">◀ Back</button>
+        <button class="btn small primary" id="sim-play">▶ Play</button>
+        <button class="btn small" id="sim-fwd">Step ▶</button>
+        <button class="btn small" id="sim-end">Skip to end ⏭</button>
+        <label style="font-size:.82rem;color:var(--muted);display:flex;gap:8px;align-items:center;margin-left:auto">speed <input type="range" id="sim-speed" min="1" max="10" value="6"></label>
+        <label style="display:none"><input type="checkbox" id="sim-dead"></label>
       </div>
+      <div class="step-note" id="sim-note"></div>
     </div>
   </div>
 </section>
 
-<section class="band" id="construction">
+<section class="band alt" id="construction">
   <div class="wrap">
     <div class="sec-head">
-      <span class="eyebrow">Kleene's theorem in practice <b>/</b> construction lab</span>
-      <h2>From regular expression to minimal DFA.</h2>
-      <p>Every detector pattern is compiled by the same pipeline: the regular expression is converted into an NFA, the subset construction turns it into a DFA, and Moore's partition refinement merges equivalent states. Type any regular expression to watch each stage.</p>
+      <span class="eyebrow">Build a DFA</span>
+      <h2>Type a regex, get a machine.</h2>
+      <p>The page converts your regular expression into an NFA, then into the smallest DFA that does the same job.</p>
     </div>
     <form class="lab-input" id="lab-form">
       <input id="lab-regex" type="text" spellcheck="false" value=".*login.*" aria-label="Regular expression">
       <button class="btn primary" type="submit">Build</button>
     </form>
-    <div class="samples" id="lab-presets"><span>Presets:</span></div>
+    <div class="samples" id="lab-presets"><span>Try:</span></div>
     <div class="lab-err" id="lab-err"></div>
-    <div class="pipeline-stats" id="lab-stats"></div>
-    <div class="steps" id="lab-steps"></div>
-  </div>
-</section>
-
-<section class="band alt" id="theory">
-  <div class="wrap">
-    <div class="sec-head">
-      <span class="eyebrow">Theoretical background</span>
-      <h2>The theory each part of the detector relies on.</h2>
-      <p>Each card states a definition or theorem from automata theory and the place in the detector where it is used.</p>
-    </div>
-    <div class="theory-grid">
-      <article class="tcard">
-        <h3>Alphabet, strings, languages</h3>
-        <div class="formula">Σ = {a…z, 0…9, - . _ ~ : / ? # [ ] @ ! $ &amp; ' ( ) * + , ; = %, ⊥}<br>w ∈ Σ*,&nbsp;&nbsp;L ⊆ Σ*</div>
-        <p>An alphabet is a finite set of symbols, a string is a finite sequence of them, and a language is any set of strings. ⊥ stands for every character outside the URL character set.</p>
-        <div class="use"><b>In the project:</b> the URL is the input string w. Each pattern, e.g. “contains login”, is a language L<sub>login</sub> = Σ*·login·Σ*.</div>
-      </article>
-      <article class="tcard">
-        <h3>Regular expressions</h3>
-        <div class="formula">r ::= a | ε | r₁r₂ | r₁ + r₂ | r*<br>L(.*login.*) = Σ* {login} Σ*</div>
-        <p>Regular expressions denote languages built from symbols with union, concatenation and Kleene star. Our parser also accepts the shorthands <code>+</code>, <code>?</code>, <code>[0-9]</code> and <code>.</code> (any symbol of Σ).</p>
-        <div class="use"><b>In the project:</b> all 13 patterns, from <code>.*@.*</code> to <code>[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+</code>, are written as regular expressions.</div>
-      </article>
-      <article class="tcard">
-        <h3>Deterministic finite automaton</h3>
-        <div class="formula">M = (Q, Σ, δ, q₀, F)<br>δ : Q × Σ → Q</div>
-        <p>A finite set of states, an alphabet, a total transition function, a start state and a set of accepting states. Exactly one move is defined for every state and symbol, so a run never branches.</p>
-        <div class="use"><b>In the project:</b> the <code>DFA</code> class stores Q, the symbol classes of Σ, a δ table, q₀ and F, and a run is a table lookup per character.</div>
-      </article>
-      <article class="tcard">
-        <h3>Extended transition function</h3>
-        <div class="formula">δ̂(q, ε) = q<br>δ̂(q, wa) = δ(δ̂(q, w), a)<br>L(M) = { w ∈ Σ* | δ̂(q₀, w) ∈ F }</div>
-        <p>δ̂ applies δ along a whole string. A string is accepted when the state reached after the last symbol is accepting.</p>
-        <div class="use"><b>In the project:</b> <code>DFA.run()</code> computes δ̂ and returns every intermediate state. That trace is what the simulator animates.</div>
-      </article>
-      <article class="tcard">
-        <h3>Nondeterministic finite automaton (NFA)</h3>
-        <div class="formula">N = (Q, Σ, δ, q₀, F)<br>δ : Q × (Σ ∪ {ε}) → 𝒫(Q)</div>
-        <p>An NFA may have several moves, or none, for the same symbol, and may move on ε without reading input. It accepts if some path ends in F. NFAs are easy to build from regular expressions.</p>
-        <div class="use"><b>In the project:</b> each regular expression is first converted into an NFA with at most 2|r| states (18 states for <code>.*login.*</code>).</div>
-      </article>
-      <article class="tcard">
-        <h3>Kleene's theorem</h3>
-        <div class="formula">regular expressions ≡ NFA ≡ DFA</div>
-        <p>A language is denoted by a regular expression if and only if some finite automaton accepts it. This is why a pattern written as a regex can always be checked by a DFA.</p>
-        <div class="use"><b>In the project:</b> it guarantees that every pattern has a DFA. We verified each compiled DFA against Python's <code>re</code> on 20,000 random strings plus every short string.</div>
-      </article>
-      <article class="tcard">
-        <h3>Subset construction (Rabin–Scott)</h3>
-        <div class="formula">Q<sub>D</sub> ⊆ 𝒫(Q<sub>N</sub>),&nbsp; q<sub>D0</sub> = ε-closure(q₀)<br>δ<sub>D</sub>(S, a) = ε-closure(⋃<sub>q∈S</sub> δ<sub>N</sub>(q, a))</div>
-        <p>Each DFA state is a set of NFA states. In the worst case this needs 2<sup>|Q<sub>N</sub>|</sup> states, but only reachable subsets are generated, and the empty set becomes the dead state.</p>
-        <div class="use"><b>In the project:</b> 18 NFA states for <code>login</code> produce only 13 reachable subsets, not 2¹⁸ = 262,144.</div>
-      </article>
-      <article class="tcard">
-        <h3>Myhill–Nerode and minimisation</h3>
-        <div class="formula">x ≡<sub>L</sub> y ⇔ ∀z: xz ∈ L ⇔ yz ∈ L<br>|Q<sub>min</sub>| = index of ≡<sub>L</sub></div>
-        <p>A language is regular if and only if ≡<sub>L</sub> has finitely many classes, and the minimal DFA has exactly one state per class. It is unique up to renaming of states.</p>
-        <div class="use"><b>In the project:</b> Moore's refinement shrinks the <code>login</code> DFA from 13 to 6 states, q₀…q₅, which is the diagram drawn in our proposal.</div>
-      </article>
-      <article class="tcard">
-        <h3>Closure properties</h3>
-        <div class="formula">L₁ ∪ L₂,&nbsp; L₁ ∩ L₂,&nbsp; L̄,&nbsp; L₁L₂,&nbsp; L* are regular</div>
-        <p>Regular languages are closed under the Boolean operations, concatenation and star. Union can be realised as a product automaton or by compiling the union regex.</p>
-        <div class="use"><b>In the project:</b> the nine keyword DFAs (64 states in total) merge into one 44-state DFA for the union. We keep them separate so each verdict can be reported and weighted on its own.</div>
-      </article>
-      <article class="tcard">
-        <h3>Pumping lemma: what DFAs cannot do</h3>
-        <div class="formula">∃p ∀w ∈ L, |w| ≥ p: w = xyz,<br>|xy| ≤ p, |y| ≥ 1, ∀i ≥ 0: xyⁱz ∈ L</div>
-        <p>Some languages are not regular. For example {aⁿbⁿ}, balanced brackets, and “the link text equals the real host” all need unbounded memory.</p>
-        <div class="use"><b>In the project:</b> this is why counts and comparisons (URL length, number of labels) run as structural rules in ordinary code, outside the automata.</div>
-      </article>
-    </div>
-
-    <div class="map-table-wrap">
-      <table class="map">
-        <thead><tr><th>MOC concept</th><th>Symbol</th><th>Where it appears in the detector</th></tr></thead>
-        <tbody>
-          <tr><td>Alphabet</td><td>Σ</td><td>59 URL characters (after lower-casing) plus ⊥, compressed into symbol classes per pattern</td></tr>
-          <tr><td>String</td><td>w ∈ Σ*</td><td>The normalised URL, or its host or path component</td></tr>
-          <tr><td>Language</td><td>L ⊆ Σ*</td><td>Set of strings that contain a suspicious pattern</td></tr>
-          <tr><td>Regular expression</td><td>r</td><td><code>.*login.*</code>, <code>.*@.*</code>, <code>[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+</code>, …</td></tr>
-          <tr><td>NFA</td><td>N</td><td>Built from each regular expression, one per pattern</td></tr>
-          <tr><td>Subset construction</td><td>𝒫(Q<sub>N</sub>)</td><td>Converts every NFA into a complete DFA</td></tr>
-          <tr><td>DFA</td><td>(Q, Σ, δ, q₀, F)</td><td>The engine that reads the URL, one symbol per step</td></tr>
-          <tr><td>States</td><td>Q</td><td>How much of the pattern has been matched so far (q₂ = “lo” seen)</td></tr>
-          <tr><td>Transition function</td><td>δ</td><td>Table lookup δ[q][class(c)], including fallback moves after a partial match</td></tr>
-          <tr><td>Start state</td><td>q₀</td><td>Nothing of the pattern has been matched yet</td></tr>
-          <tr><td>Accepting states</td><td>F</td><td>Pattern found. For Σ*wΣ* the accepting state loops on all of Σ</td></tr>
-          <tr><td>Dead state</td><td>q<sub>d</sub></td><td>The pattern can no longer match (IPv4 DFA after reading a letter)</td></tr>
-          <tr><td>Minimisation</td><td>≡<sub>L</sub></td><td>Moore's partition refinement gives the smallest DFA for each pattern</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-</section>
-
-<section class="band" id="architecture">
-  <div class="wrap">
-    <div class="sec-head">
-      <span class="eyebrow">Proposed system</span>
-      <h2>Four modules, one pipeline.</h2>
-      <p>The automata are only responsible for pattern recognition. Parsing, counting rules and scoring are separate modules, so the detector is not presented as a single formal language.</p>
-    </div>
-    <div class="arch">
-      <div class="mod"><span class="idx">MODULE 1</span><h3>URL parser</h3><p>Normalises case and splits the URL into scheme, userinfo, host, subdomain, domain, port, path, query and fragment.</p><code>parse_url()</code></div>
-      <div class="mod"><span class="idx">MODULE 2</span><h3>MOC automata engine</h3><p>Compiles each regex through regex → NFA → DFA → minimal DFA and runs the resulting DFA on its URL component.</p><code>compile_regex(), DFA.run()</code></div>
-      <div class="mod"><span class="idx">MODULE 3</span><h3>Feature detector</h3><p>Collects DFA verdicts, applies the structural rules and adds up the weights into a score and a class.</p><code>analyse(), classify()</code></div>
-      <div class="mod"><span class="idx">MODULE 4</span><h3>Web interface</h3><p>This page. A Flask API serves the Python engine, and a JavaScript port runs the same automata in the browser.</p><code>app.py, index.html</code></div>
-    </div>
-    <div class="flowline" aria-label="Processing pipeline">
-      <span class="s">User URL</span>→<span class="s">Preprocess</span>→<span class="s">Extract components</span>→<span class="s">13 DFAs + 3 rules</span>→<span class="s">Pattern results</span>→<span class="s">Risk score</span>→<span class="s">Low / Suspicious / High</span>
-    </div>
-    <div class="two">
-      <div class="panel">
-        <h3>Risk-scoring weights</h3>
-        <table class="data" id="weights"></table>
+    <div class="lab-flow" id="lab-stats"></div>
+    <div class="panel">
+      <div class="tabs" role="tablist">
+        <button class="tab" role="tab" id="tab-nfa" aria-selected="false">NFA</button>
+        <button class="tab" role="tab" id="tab-dfa" aria-selected="true">Minimal DFA</button>
       </div>
-      <div class="panel">
-        <h3>Patterns and the component each DFA reads</h3>
-        <table class="data" id="pattern-table"></table>
-      </div>
+      <p class="note" id="lab-caption" style="margin-top:12px"></p>
+      <div class="diagram" id="lab-diagram" style="margin-top:8px"></div>
     </div>
   </div>
 </section>
 
-<section class="band alt" id="results">
+<section class="band" id="results">
   <div class="wrap">
     <div class="sec-head">
-      <span class="eyebrow">Implementation and results</span>
-      <h2>What the experiments show.</h2>
-      <p>All figures below come from <code>evaluate.py</code> running the Python engine. The URL set is a small illustrative set written by the team, so it shows how the detector behaves rather than estimating real-world accuracy.</p>
+      <span class="eyebrow">Results</span>
+      <h2>Does it work?</h2>
+      <p>Numbers from our test script. The 22 example URLs were written by us, so they show how the detector behaves, not real-world accuracy.</p>
     </div>
     <div class="kpis" id="kpis"></div>
     <div class="panel">
-      <h3>Automaton size at each stage of the pipeline</h3>
-      <p class="note" style="margin:6px 0 14px">Number of states. The subset construction never came close to its 2<sup>n</sup> worst case, and minimisation roughly halved every keyword DFA.</p>
-      <div class="legend"><span><i style="background:var(--c1)"></i>NFA</span><span><i style="background:var(--c2)"></i>Subset-construction DFA</span><span><i style="background:var(--c3)"></i>Minimal DFA</span></div>
-      <div class="chart-wrap" id="size-chart"></div>
-    </div>
-    <div class="two">
-      <div class="panel">
-        <h3>Correctness against Python <code>re</code></h3>
-        <p class="note" style="margin:6px 0 12px">Each minimal DFA and <code>re.fullmatch</code> judged the same strings: 20,000 random strings, plus every string up to length L built from one character per symbol class.</p>
-        <div style="overflow-x:auto"><table class="data" id="eq-table"></table></div>
-      </div>
-      <div class="panel">
-        <h3>Linear-time scanning</h3>
-        <p class="note" style="margin:6px 0 12px">A DFA does one table lookup per character, so time grows linearly with input length: O(n), independent of the pattern.</p>
-        <div class="chart-wrap" id="time-chart"></div>
-        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:12px">
-          <button class="btn small" id="bench-btn">Benchmark in this browser</button>
-          <span class="note" id="bench-out"></span>
-        </div>
-      </div>
-    </div>
-    <div class="panel" style="margin-top:20px">
       <div style="display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;align-items:flex-start">
         <div style="min-width:0;flex:1 1 300px">
-          <h3>Illustrative URL set</h3>
-          <p class="note" style="margin:6px 0 0;max-width:70ch">Phishing-style URLs use invented or reserved domains. Click a row to open it in the analyzer. A URL counts as flagged when it is classed Suspicious or High Risk.</p>
+          <h3>Example URLs</h3>
+          <p class="note" style="margin:6px 0 0;max-width:60ch">Click a row to try it in the analyzer. Mistakes: a real Google sign-in page was flagged because it contains “signin” and “account”, and two phishing-style links with no warning words were missed.</p>
         </div>
         <div class="cm" id="cm"></div>
       </div>
       <div class="ex-table-wrap" style="margin-top:16px"><table class="ex" id="ex-table"></table></div>
-    </div>
-  </div>
-</section>
-
-<section class="band" id="discussion">
-  <div class="wrap">
-    <div class="sec-head">
-      <span class="eyebrow">Discussion</span>
-      <h2>What the detector can and cannot tell you.</h2>
-    </div>
-    <div class="limits">
-      <div class="panel">
-        <h3>Limitations</h3>
-        <ul>
-          <li><strong>Keywords are evidence, not proof.</strong> <code>accounts.google.com/signin</code> scores 2 and is flagged although it is legitimate.</li>
-          <li><strong>Clean-looking URLs pass.</strong> A shortened link such as <code>bit.ly/3xYzAbc</code> contains no pattern and scores 0.</li>
-          <li><strong>No memory beyond finite states.</strong> Comparing displayed text with the real host, or counting without a bound, is not regular.</li>
-          <li><strong>Thresholds are project rules.</strong> The weights and the 0–1 / 2–3 / ≥ 4 bands are choices we made, not properties of automata.</li>
-        </ul>
-      </div>
-      <div class="panel">
-        <h3>Future scope</h3>
-        <ul>
-          <li><strong>Trusted-domain allowlist</strong> and percent-decoding before the automata run.</li>
-          <li><strong>One product DFA</strong> whose accepting states record which keywords were found, in the style of Aho–Corasick.</li>
-          <li><strong>Homoglyph patterns</strong> such as <code>paypa1</code> or <code>rn</code> written in place of <code>m</code>, as further regular languages.</li>
-          <li><strong>Threat-intelligence feeds</strong> and a comparison with machine-learning detectors on a public dataset.</li>
-        </ul>
-      </div>
     </div>
   </div>
 </section>
@@ -742,7 +595,8 @@ footer { border-top: 1px solid var(--line); padding-block: 48px; color: var(--mu
   <div class="wrap foot">
     <div>
       <h4>PhishDFA</h4>
-      <p>Rule-Based Phishing URL Detector Using Finite Automata. Mini project for Models of Computation (Theory of Computation). The risk score is an educational heuristic, not a security verdict.</p>
+      <p>Rule-Based Phishing URL Detector Using Finite Automata. MOC mini project. The score is a teaching tool, not a security guarantee.</p>
+      <p style="margin-top:10px"><a href="https://github.com/Nilay-11/MOC-PROJ">Source code on GitHub</a></p>
     </div>
     <div>
       <h4>Team</h4>
@@ -752,15 +606,12 @@ footer { border-top: 1px solid var(--line); padding-block: 48px; color: var(--mu
       </div>
     </div>
     <div>
-      <h4>References</h4>
-      <ol>
-        <li>Hopcroft, Motwani, Ullman. <em>Introduction to Automata Theory, Languages, and Computation.</em></li>
-        <li>Sipser. <em>Introduction to the Theory of Computation.</em></li>
-        <li>Aho, Lam, Sethi, Ullman. <em>Compilers: Principles, Techniques, and Tools</em>, ch. 3.</li>
-      </ol>
+      <h4>Concepts used</h4>
+      <p>Alphabet and strings · Regular expressions · NFA · DFA · NFA → DFA conversion · DFA minimisation · Accepting and dead states</p>
     </div>
   </div>
 </footer>
+
 
 <script>
 /* ======================================================================= *
@@ -1052,8 +903,8 @@ const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&l
 
 function edgeLabel(idxs, labels) {
   const n = labels.length;
-  if (idxs.length === n) return "Σ";
-  if (n > 2 && idxs.length > n / 2) return "Σ∖{" + labels.filter((_, i) => !idxs.includes(i)).join(",") + "}";
+  if (idxs.length === n) return "any";
+  if (n > 2 && idxs.length > n / 2) return "other";
   return idxs.map((i) => labels[i]).join(", ");
 }
 
@@ -1311,12 +1162,12 @@ function renderAnalysis(raw) {
   ];
   document.getElementById("comp-list").innerHTML = comp.map(([k, v, c]) =>
     `<div><dt><i class="swatch" style="background:${c}"></i>${k}</dt><dd>${v ? esc(v) : '<span style="color:var(--muted)">—</span>'}</dd></div>`).join("") +
-    (p.userinfo ? `<div style="grid-column:1/-1"><dd style="font-family:var(--font-body);color:var(--high)">Everything before the “@” is user information. The browser actually connects to <b>${esc(p.host)}</b>.</dd></div>` : "");
+    (p.userinfo ? `<div style="grid-column:1/-1"><dd style="font-family:var(--font-body);color:var(--high)">Trick: the text before “@” is ignored. The browser really goes to <b>${esc(p.host)}</b>.</dd></div>` : "");
 
   // DFA cards
   const dfas = a.findings.filter((f) => f.kind === "dfa");
-  document.getElementById("dfa-count").textContent = `· ${dfas.filter((f) => f.hit).length} of ${dfas.length} accepted`;
-  document.getElementById("findings").innerHTML = dfas.map((f) => {
+  document.getElementById("dfa-count").textContent = `· ${dfas.filter((f) => f.hit).length} of ${dfas.length}`;
+  document.getElementById("findings").innerHTML = dfas.filter((f) => f.hit).map((f) => {
     const m = compileRegex(f.regex).min;
     let snip = "";
     if (f.hit && f.input) {
@@ -1328,13 +1179,16 @@ function renderAnalysis(raw) {
     }
     return `<div class="finding ${f.hit ? "hit" : ""}">
       <div class="top"><span class="name">${esc(f.title)}</span><span class="w">${f.hit ? "+" + f.weight : "w " + f.weight}</span></div>
-      <div class="re">${esc(f.regex)} · reads ${f.scope}</div>
-      <div class="state"><span>δ̂(q0, w) = ${f.finalState} ${f.hit ? "∈" : "∉"} F</span><span class="tag ${f.hit ? "acc" : "rej"}">${f.hit ? "ACCEPT" : "REJECT"}</span></div>
+      <div class="re">regex ${esc(f.regex)}</div>
+      <div class="state"><span>ended in ${f.finalState} (accepting)</span><span class="tag ${f.hit ? "acc" : "rej"}">${f.hit ? "ACCEPT" : "REJECT"}</span></div>
       ${snip ? `<div class="snip">${snip}</div>` : ""}
-      <button class="link-btn" data-sim="${f.id}">Simulate this DFA (${m.states.length} states) →</button>
+      <button class="link-btn" data-sim="${f.id}">Watch this DFA →</button>
     </div>`;
   }).join("");
-  document.getElementById("rules").innerHTML = a.findings.filter((f) => f.kind === "rule").map((f) =>
+  const misses = dfas.filter((f) => !f.hit);
+  document.getElementById("misses").innerHTML = misses.length ? `Not found: ${misses.map((f) => `<span class="m">${esc(f.title.replace(/^Keyword /, ""))}</span>`).join("")}` : "";
+  if (!dfas.some((f) => f.hit)) document.getElementById("findings").innerHTML = `<p class="note">No DFA reached an accepting state.</p>`;
+  document.getElementById("rules").innerHTML = a.findings.filter((f) => f.kind === "rule" && f.hit).map((f) =>
     `<div class="rule ${f.hit ? "hit" : ""}"><span>${esc(f.title)}<br><small>${esc(f.detail)}</small></span><span class="tag ${f.hit ? "acc" : "rej"}" style="${f.hit ? "background:var(--mid)" : ""}">${f.hit ? "+1" : "OK"}</span></div>`).join("");
   currentAnalysis = a;
 }
@@ -1368,7 +1222,7 @@ const sim = (() => {
   const sel = document.getElementById("sim-pattern"), inp = document.getElementById("sim-input");
   const deadBox = document.getElementById("sim-dead"), playBtn = document.getElementById("sim-play");
   const speed = document.getElementById("sim-speed");
-  PATTERNS.forEach((p) => { const o = document.createElement("option"); o.value = p.id; o.textContent = `${p.title} · ${p.regex}`; sel.appendChild(o); });
+  PATTERNS.forEach((p) => { const o = document.createElement("option"); o.value = p.id; o.textContent = p.title; sel.appendChild(o); });
   let st = { pid: "kw_login", text: "", c: null, trace: [], k: 0, view: null, timer: null };
 
   function build() {
@@ -1378,7 +1232,7 @@ const sim = (() => {
     st.view = renderGraph(document.getElementById("sim-diagram"), graphFromDFA(m, st.c.labels, deadBox.checked), { gapX: 120, faintBack: true, label: `Minimal DFA for ${p.regex}` });
     const dead = deadStates(m);
     const Q = m.states.map((s, i) => (dead.has(i) ? "q_d" : s));
-    document.getElementById("sim-tuple").innerHTML =
+    const tupleEl = document.getElementById("sim-tuple"); if (tupleEl) tupleEl.innerHTML =
       `<div><span class="k">L</span> = L(<code>${esc(p.regex)}</code>)</div>` +
       `<div><span class="k">Q</span> = {${Q.join(", ")}}</div>` +
       `<div><span class="k">Σ</span> = {${st.c.labels.join(", ")}}</div>` +
@@ -1401,14 +1255,14 @@ const sim = (() => {
     const q = st.trace[k];
     st.view.highlight(q, k > 0 ? st.trace[k - 1] + ">" + q : null);
     const note = document.getElementById("sim-note");
-    if (k === 0) note.innerHTML = `Start in <b>${m.states[q]}</b>. ${st.text.length} symbols to read.`;
+    if (k === 0) note.innerHTML = `Start in <b>${m.states[q]}</b>. Press Play or Step. ${st.text.length} characters to read.`;
     else {
       const ch = st.text[k - 1], x = symbolOf(m, ch);
-      note.innerHTML = `step ${k}/${st.text.length}: δ(<b>${m.states[st.trace[k - 1]]}</b>, '${esc(ch)}'${labels[x] !== ch ? ` ∈ ${esc(labels[x])}` : ""}) = <b>${m.states[q]}</b>`;
+      note.innerHTML = `Step ${k} of ${st.text.length}: in <b>${m.states[st.trace[k - 1]]}</b>, read '${esc(ch)}', moved to <b>${m.states[q]}</b>`;
     }
     if (k === st.text.length) {
       const acc = m.accepting.has(q);
-      note.innerHTML += `<br>${acc ? `<span class="acc">Input consumed in ${m.states[q]} ∈ F: ACCEPTED</span>` : `Input consumed in ${m.states[q]} ∉ F: REJECTED`}`;
+      note.innerHTML += `<br>${acc ? `<span class="acc">Finished in an accepting state: pattern FOUND</span>` : `Finished in ${m.states[q]}, not accepting: pattern NOT found`}`;
     }
     // table
     const next = k < st.text.length ? symbolOf(m, st.text[k]) : -1;
@@ -1420,7 +1274,7 @@ const sim = (() => {
       h += `<tr class="${s === q ? "cur" : ""}"><td class="rowh ${m.accepting.has(s) ? "accst" : ""}">${mark}${m.states[s]}</td>` +
         row.map((t, i) => `<td class="${s === q && i === next ? "hot" : ""}">${dead.has(t) && !deadBox.checked ? "qd" : m.states[t]}</td>`).join("") + "</tr>";
     });
-    document.getElementById("sim-table").innerHTML = h + "</tbody></table>";
+    const tableEl = document.getElementById("sim-table"); if (tableEl) tableEl.innerHTML = h + "</tbody></table>";
     playBtn.textContent = st.timer ? "❚❚ Pause" : "▶ Play";
   }
   const stop = () => { clearInterval(st.timer); st.timer = null; };
@@ -1448,56 +1302,40 @@ const sim = (() => {
  *  Construction lab
  * ======================================================================= */
 const LAB_PRESETS = [
-  [".*login.*", "keyword login"],
-  ["[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+", "IPv4 host"],
-  [".*@.*", "@ symbol"],
-  [".*xn--.*", "punycode"],
-  ["(a|b)*abb", "textbook (a|b)*abb"],
-  [".*(bank|login).*", "union of two keywords"],
+  [".*login.*", "contains login"],
+  [".*@.*", "contains @"],
+  ["[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+", "IP address"],
+  ["(a|b)*abb", "(a|b)*abb"],
 ];
+let labView = "dfa", labC = null;
+function drawLab() {
+  const c = labC, box = document.getElementById("lab-diagram"), cap = document.getElementById("lab-caption");
+  document.getElementById("tab-nfa").setAttribute("aria-selected", labView === "nfa");
+  document.getElementById("tab-dfa").setAttribute("aria-selected", labView === "dfa");
+  if (labView === "nfa") {
+    cap.textContent = `NFA: ${c.nfa.n} states. ε arrows can be taken without reading a character. Gold = accepting state.`;
+    if (c.nfa.n <= 48) renderGraph(box, graphFromNFA(c.nfa, c.labels), { gapX: 74, label: "NFA" });
+    else box.innerHTML = `<p class="note">${c.nfa.n} states is too many to draw clearly.</p>`;
+  } else {
+    const dead = deadStates(c.min).size;
+    cap.textContent = `Minimal DFA: ${c.min.states.length} states. Exactly one arrow per character, so it never has to guess.${dead ? " The dashed qd is a dead state: once there, no match is possible." : ""}`;
+    if (c.min.states.length <= 30) renderGraph(box, graphFromDFA(c.min, c.labels, true), { gapX: 120, faintBack: true, label: "Minimal DFA" });
+    else box.innerHTML = `<p class="note">${c.min.states.length} states is too many to draw clearly.</p>`;
+  }
+}
 function renderLab(regex) {
   const err = document.getElementById("lab-err");
-  let c;
-  try { c = compileRegex(regex); err.textContent = ""; }
-  catch (e) { err.textContent = e instanceof RegexError ? "That expression could not be parsed: " + e.message + "." : String(e); return; }
-  const m = c.min, liveMin = m.states.length - deadStates(m).size;
-  document.getElementById("lab-stats").innerHTML = [
-    [c.labels.length, "symbol classes", "alphabet compression"],
-    [c.nfa.n, `NFA states (${c.nfa.nEps} ε-moves)`, "regex → NFA"],
-    [c.subset.states.length, "DFA states", "subset construction"],
-    [m.states.length, `minimal DFA states${liveMin !== m.states.length ? " incl. dead" : ""}`, "Moore refinement"],
-  ].map(([n, l, a]) => `<div><span class="alg">${a}</span><span class="n">${n}</span><span class="l">${l}</span></div>`).join("");
-
-  const steps = document.getElementById("lab-steps");
-  steps.innerHTML = `
-    <div class="step"><div class="step-h"><span class="num">1</span><h3>Alphabet compression</h3></div>
-      <p>Σ has ${SIGMA.length} symbols. Characters that every character set in the expression treats the same way are merged into one class, so δ needs ${c.labels.length} columns instead of ${SIGMA.length}.</p>
-      <div class="classes">${c.classes.map((cls, i) => `<span class="cls"><b>${esc(c.labels[i])}</b>${cls.length === 1 && cls[0] !== OTHER ? "" : cls.length > 24 ? cls.length + " characters, " + esc(cls.filter((x) => x !== OTHER).slice(0, 12).join(" ")) + " …" : esc(cls.map((x) => (x === OTHER ? "⊥" : x)).join(" "))}</span>`).join("")}</div></div>
-    <div class="step"><div class="step-h"><span class="num">2</span><h3>Regular expression → NFA</h3></div>
-      <p>Each symbol becomes a two-state fragment. Concatenation, union and star join fragments with ε-moves. The result has one start state (${c.nfa.start}) and one accepting state (${c.nfa.accept}).</p>
-      <div class="diagram" id="lab-nfa"></div></div>
-    <div class="step"><div class="step-h"><span class="num">3</span><h3>Subset construction: NFA → DFA</h3></div>
-      <p>Each DFA state D<sub>i</sub> is the ε-closure of a set of NFA states. A D-state is accepting when its set contains NFA state ${c.nfa.accept}. ${c.rows.some((r) => !r.nfa.length) ? "The empty set ∅ is the dead state." : ""}</p>
-      <div class="tt-wrap"><table class="tt"><thead><tr><th>D</th><th>ε-closure (NFA states)</th>${c.labels.map((l) => `<th>${esc(l)}</th>`).join("")}</tr></thead><tbody>
-      ${c.rows.slice(0, 80).map((r) => `<tr><td class="rowh ${r.accepting ? "accst" : ""}">${r.index === 0 ? "→" : ""}${r.accepting ? "*" : ""}D${r.index}</td><td style="text-align:left;white-space:normal;min-width:180px">{${r.nfa.length ? r.nfa.join(", ") : "∅"}}</td>${r.targets.map((t) => `<td>D${t}</td>`).join("")}</tr>`).join("")}
-      </tbody></table></div>${c.rows.length > 80 ? `<p class="note" style="margin-top:8px">Showing 80 of ${c.rows.length} rows.</p>` : ""}</div>
-    <div class="step"><div class="step-h"><span class="num">4</span><h3>Minimisation by partition refinement</h3></div>
-      <p>Start from {F, Q∖F}. In every round, split a block when two of its states move to different blocks on some symbol. When no block splits, each block is one state of the minimal DFA (one Myhill–Nerode class).</p>
-      <div class="rounds">${c.rounds.map((r, i) => `<div><span class="r">round ${i}</span>${r.map((b) => `<span class="blk ${b.some((q) => c.subset.accepting.has(q)) ? "acc" : ""}">{${b.map((q) => "D" + q).join(",")}}</span>`).join("")}</div>`).join("")}
-      <div><span class="r">result</span><span class="note">${c.subset.states.length} → ${m.states.length} states</span></div></div></div>
-    <div class="step"><div class="step-h"><span class="num">5</span><h3>Minimal DFA</h3></div>
-      <p>States renamed q0, q1, … in breadth-first order from the start state. ${deadStates(m).size ? "The dead state qd is drawn dashed." : "There is no dead state: once the pattern is found, the accepting state loops on every symbol."}</p>
-      <div class="diagram" id="lab-dfa"></div><div class="tt-wrap" id="lab-dfa-table"></div></div>`;
-  const nfaBox = document.getElementById("lab-nfa");
-  if (c.nfa.n <= 48) renderGraph(nfaBox, graphFromNFA(c.nfa, c.labels), { gapX: 74, label: "NFA" });
-  else nfaBox.innerHTML = `<p class="note">${c.nfa.n} states is too many to draw clearly. The subset construction below lists every reachable set of these states.</p>`;
-  const dfaBox = document.getElementById("lab-dfa");
-  if (m.states.length <= 30) renderGraph(dfaBox, graphFromDFA(m, c.labels, true), { gapX: 120, faintBack: true, label: "Minimal DFA" });
-  else dfaBox.innerHTML = `<p class="note">${m.states.length} states. See the transition table below.</p>`;
-  let t = `<table class="tt"><thead><tr><th>δ</th>${c.labels.map((l) => `<th>${esc(l)}</th>`).join("")}</tr></thead><tbody>`;
-  m.delta.forEach((row, s) => { t += `<tr><td class="rowh ${m.accepting.has(s) ? "accst" : ""}">${s === m.start ? "→" : ""}${m.accepting.has(s) ? "*" : ""}${m.states[s]}</td>${row.map((x) => `<td>${m.states[x]}</td>`).join("")}</tr>`; });
-  document.getElementById("lab-dfa-table").innerHTML = t + "</tbody></table>";
+  try { labC = compileRegex(regex); err.textContent = ""; }
+  catch (e) { err.textContent = e instanceof RegexError ? "Could not read that expression: " + e.message + "." : String(e); return; }
+  const c = labC;
+  document.getElementById("lab-stats").innerHTML =
+    `<div class="box"><b>${c.nfa.n}</b><span>NFA states</span></div><span class="arr">→</span>` +
+    `<div class="box"><b>${c.subset.states.length}</b><span>DFA states</span></div><span class="arr">→</span>` +
+    `<div class="box"><b>${c.min.states.length}</b><span>minimal DFA states</span></div>`;
+  drawLab();
 }
+document.getElementById("tab-nfa").addEventListener("click", () => { labView = "nfa"; drawLab(); });
+document.getElementById("tab-dfa").addEventListener("click", () => { labView = "dfa"; drawLab(); });
 document.getElementById("lab-form").addEventListener("submit", (e) => { e.preventDefault(); renderLab(document.getElementById("lab-regex").value); });
 const presetsEl = document.getElementById("lab-presets");
 LAB_PRESETS.forEach(([r, name]) => {
@@ -1508,77 +1346,25 @@ LAB_PRESETS.forEach(([r, name]) => {
 });
 
 /* ======================================================================= *
- *  Architecture tables
- * ======================================================================= */
-document.getElementById("weights").innerHTML = `<thead><tr><th>Indicator</th><th>Detected by</th><th class="num">Weight</th></tr></thead><tbody>` +
-  [["Each suspicious keyword (9)", "DFA", 1], ["“@” symbol", "DFA", 2], ["IPv4 address as hostname", "DFA", 2], ["Punycode host", "DFA", 1], ["“//” inside path", "DFA", 1],
-   [`URL longer than ${LONG_URL} characters`, "rule", 1], [`More than ${MAX_HOST_LABELS} hostname labels`, "rule", 1], [`More than ${MAX_SPECIAL} special characters`, "rule", 1]]
-    .map(([a, b, w]) => `<tr><td>${a}</td><td><span class="mono">${b}</span></td><td class="num">+${w}</td></tr>`).join("") + "</tbody>";
-document.getElementById("pattern-table").innerHTML = `<thead><tr><th>Regular expression</th><th>Reads</th><th class="num">States</th></tr></thead><tbody>` +
-  PATTERNS.map((p) => `<tr><td class="mono" style="font-size:.8rem;overflow-wrap:anywhere">${esc(p.regex)}</td><td>${p.scope}</td><td class="num">${compileRegex(p.regex).min.states.length}</td></tr>`).join("") + "</tbody>";
-
-/* ======================================================================= *
  *  Results (numbers injected from results/results.json by build_site.py)
  * ======================================================================= */
 const RESULTS = /*RESULTS-START*/{"sizes":[{"id":"kw_login","regex":".*login.*","symbol_classes":6,"nfa_states":18,"nfa_edges":31,"nfa_eps":14,"subset_dfa_states":13,"min_dfa_states":6,"refinement_rounds":5,"min_dfa_has_dead_state":false},{"id":"kw_signin","regex":".*signin.*","symbol_classes":5,"nfa_states":20,"nfa_edges":31,"nfa_eps":15,"subset_dfa_states":15,"min_dfa_states":7,"refinement_rounds":6,"min_dfa_has_dead_state":false},{"id":"kw_verify","regex":".*verify.*","symbol_classes":7,"nfa_states":20,"nfa_edges":35,"nfa_eps":15,"subset_dfa_states":15,"min_dfa_states":7,"refinement_rounds":6,"min_dfa_has_dead_state":false},{"id":"kw_account","regex":".*account.*","symbol_classes":7,"nfa_states":22,"nfa_edges":37,"nfa_eps":16,"subset_dfa_states":17,"min_dfa_states":8,"refinement_rounds":7,"min_dfa_has_dead_state":false},{"id":"kw_password","regex":".*password.*","symbol_classes":8,"nfa_states":24,"nfa_edges":41,"nfa_eps":17,"subset_dfa_states":19,"min_dfa_states":9,"refinement_rounds":8,"min_dfa_has_dead_state":false},{"id":"kw_secure","regex":".*secure.*","symbol_classes":6,"nfa_states":20,"nfa_edges":33,"nfa_eps":15,"subset_dfa_states":15,"min_dfa_states":7,"refinement_rounds":6,"min_dfa_has_dead_state":false},{"id":"kw_update","regex":".*update.*","symbol_classes":7,"nfa_states":20,"nfa_edges":35,"nfa_eps":15,"subset_dfa_states":15,"min_dfa_states":7,"refinement_rounds":6,"min_dfa_has_dead_state":false},{"id":"kw_bank","regex":".*bank.*","symbol_classes":5,"nfa_states":16,"nfa_edges":27,"nfa_eps":13,"subset_dfa_states":11,"min_dfa_states":5,"refinement_rounds":4,"min_dfa_has_dead_state":false},{"id":"kw_confirm","regex":".*confirm.*","symbol_classes":8,"nfa_states":22,"nfa_edges":39,"nfa_eps":16,"subset_dfa_states":17,"min_dfa_states":8,"refinement_rounds":7,"min_dfa_has_dead_state":false},{"id":"at_symbol","regex":".*@.*","symbol_classes":2,"nfa_states":10,"nfa_edges":15,"nfa_eps":10,"subset_dfa_states":5,"min_dfa_states":2,"refinement_rounds":1,"min_dfa_has_dead_state":false},{"id":"ipv4_host","regex":"[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+","symbol_classes":3,"nfa_states":22,"nfa_edges":25,"nfa_eps":18,"subset_dfa_states":9,"min_dfa_states":9,"refinement_rounds":8,"min_dfa_has_dead_state":true},{"id":"punycode","regex":".*xn--.*","symbol_classes":4,"nfa_states":16,"nfa_edges":25,"nfa_eps":13,"subset_dfa_states":11,"min_dfa_states":5,"refinement_rounds":4,"min_dfa_has_dead_state":false},{"id":"dbl_slash","regex":".*//.*","symbol_classes":2,"nfa_states":12,"nfa_edges":17,"nfa_eps":11,"subset_dfa_states":7,"min_dfa_states":3,"refinement_rounds":2,"min_dfa_has_dead_state":false},{"id":"union_keywords","regex":".*(login|signin|verify|account|password|secure|update|bank|confirm).*","symbol_classes":22,"nfa_states":120,"nfa_edges":173,"nfa_eps":74,"subset_dfa_states":111,"min_dfa_states":44,"refinement_rounds":8,"min_dfa_has_dead_state":false}],"equivalence":[{"id":"kw_login","random_samples":20000,"random_agree":20000,"random_accepted":8,"exhaustive_max_len":7,"exhaustive_strings":335923,"exhaustive_agree":335923},{"id":"kw_signin","random_samples":20000,"random_agree":20000,"random_accepted":6,"exhaustive_max_len":7,"exhaustive_strings":97656,"exhaustive_agree":97656},{"id":"kw_verify","random_samples":20000,"random_agree":20000,"random_accepted":1,"exhaustive_max_len":6,"exhaustive_strings":137257,"exhaustive_agree":137257},{"id":"kw_account","random_samples":20000,"random_agree":20000,"random_accepted":0,"exhaustive_max_len":6,"exhaustive_strings":137257,"exhaustive_agree":137257},{"id":"kw_password","random_samples":20000,"random_agree":20000,"random_accepted":0,"exhaustive_max_len":6,"exhaustive_strings":299593,"exhaustive_agree":299593},{"id":"kw_secure","random_samples":20000,"random_agree":20000,"random_accepted":2,"exhaustive_max_len":7,"exhaustive_strings":335923,"exhaustive_agree":335923},{"id":"kw_update","random_samples":20000,"random_agree":20000,"random_accepted":0,"exhaustive_max_len":6,"exhaustive_strings":137257,"exhaustive_agree":137257},{"id":"kw_bank","random_samples":20000,"random_agree":20000,"random_accepted":186,"exhaustive_max_len":7,"exhaustive_strings":97656,"exhaustive_agree":97656},{"id":"kw_confirm","random_samples":20000,"random_agree":20000,"random_accepted":0,"exhaustive_max_len":6,"exhaustive_strings":299593,"exhaustive_agree":299593},{"id":"at_symbol","random_samples":20000,"random_agree":20000,"random_accepted":19159,"exhaustive_max_len":18,"exhaustive_strings":524287,"exhaustive_agree":524287},{"id":"ipv4_host","random_samples":20000,"random_agree":20000,"random_accepted":0,"exhaustive_max_len":11,"exhaustive_strings":265720,"exhaustive_agree":265720},{"id":"punycode","random_samples":20000,"random_agree":20000,"random_accepted":820,"exhaustive_max_len":9,"exhaustive_strings":349525,"exhaustive_agree":349525},{"id":"dbl_slash","random_samples":20000,"random_agree":20000,"random_accepted":17811,"exhaustive_max_len":18,"exhaustive_strings":524287,"exhaustive_agree":524287},{"id":"union_keywords","random_samples":20000,"random_agree":20000,"random_accepted":0,"exhaustive_max_len":4,"exhaustive_strings":245411,"exhaustive_agree":245411}],"examples":[{"url":"https://www.google.com/","label":"benign","score":0,"classification":"Low Risk","flagged":false,"indicators":[]},{"url":"https://github.com/nilay-11","label":"benign","score":0,"classification":"Low Risk","flagged":false,"indicators":[]},{"url":"https://en.wikipedia.org/wiki/Finite-state_machine","label":"benign","score":0,"classification":"Low Risk","flagged":false,"indicators":[]},{"url":"https://vit.ac.in/academics","label":"benign","score":0,"classification":"Low Risk","flagged":false,"indicators":[]},{"url":"https://docs.python.org/3/library/re.html","label":"benign","score":0,"classification":"Low Risk","flagged":false,"indicators":[]},{"url":"https://www.amazon.in/gp/cart/view.html","label":"benign","score":0,"classification":"Low Risk","flagged":false,"indicators":[]},{"url":"https://stackoverflow.com/questions/tagged/regex","label":"benign","score":0,"classification":"Low Risk","flagged":false,"indicators":[]},{"url":"https://news.ycombinator.com/item?id=1","label":"benign","score":0,"classification":"Low Risk","flagged":false,"indicators":[]},{"url":"https://accounts.google.com/signin","label":"benign","score":2,"classification":"Suspicious","flagged":true,"indicators":["kw_signin","kw_account"]},{"url":"https://www.icicibank.com/","label":"benign","score":1,"classification":"Low Risk","flagged":false,"indicators":["kw_bank"]},{"url":"http://login.example.com/verify-account","label":"phish","score":3,"classification":"Suspicious","flagged":true,"indicators":["kw_login","kw_verify","kw_account"]},{"url":"http://login-example.com/verify","label":"phish","score":2,"classification":"Suspicious","flagged":true,"indicators":["kw_login","kw_verify"]},{"url":"http://192.168.10.5/secure/bank/login.php","label":"phish","score":5,"classification":"High Risk","flagged":true,"indicators":["kw_login","kw_secure","kw_bank","ipv4_host"]},{"url":"http://mybank.com@203.0.113.7/confirm","label":"phish","score":6,"classification":"High Risk","flagged":true,"indicators":["kw_bank","kw_confirm","at_symbol","ipv4_host"]},{"url":"http://secure-update.mybank.verify.example.net/account/login","label":"phish","score":7,"classification":"High Risk","flagged":true,"indicators":["kw_login","kw_verify","kw_account","kw_secure","kw_update","kw_bank","many_subdomains"]},{"url":"https://mybank.example-secure-login.xyz/password/reset?user=abc&token=xyz&step=2&ref=mail","label":"phish","score":6,"classification":"High Risk","flagged":true,"indicators":["kw_login","kw_password","kw_secure","kw_bank","long_url","special_chars"]},{"url":"http://xn--mybnk-9qa.example/signin","label":"phish","score":2,"classification":"Suspicious","flagged":true,"indicators":["kw_signin","punycode"]},{"url":"http://198.51.100.23/~user/account_update.html","label":"phish","score":4,"classification":"High Risk","flagged":true,"indicators":["kw_account","kw_update","ipv4_host"]},{"url":"https://example.org//redirect//login.mybank.example/","label":"phish","score":3,"classification":"Suspicious","flagged":true,"indicators":["kw_login","kw_bank","dbl_slash"]},{"url":"http://update.mybank.com.account-verify.example.ru/confirm","label":"phish","score":6,"classification":"High Risk","flagged":true,"indicators":["kw_verify","kw_account","kw_update","kw_bank","kw_confirm","many_subdomains"]},{"url":"http://bit.ly/3xYzAbc","label":"phish","score":0,"classification":"Low Risk","flagged":false,"indicators":[]},{"url":"https://mybank-support.example.top/help","label":"phish","score":1,"classification":"Low Risk","flagged":false,"indicators":["kw_bank"]}],"confusion":{"tp":10,"fn":2,"fp":1,"tn":9},"timing":{"dfa_scan":[{"length":1000,"ms":0.389,"us_per_char":0.389},{"length":2000,"ms":0.763,"us_per_char":0.382},{"length":4000,"ms":1.573,"us_per_char":0.393},{"length":8000,"ms":3.165,"us_per_char":0.396},{"length":16000,"ms":6.088,"us_per_char":0.38}],"analyse_ms_per_url":0.323,"patterns_per_url":13}}/*RESULTS-END*/;
 
 function renderResults() {
   if (!RESULTS) return;
-  const R = RESULTS;
-  const eqAll = R.equivalence.every((e) => e.random_agree === e.random_samples && e.exhaustive_agree === e.exhaustive_strings);
+  const R = RESULTS, cm = R.confusion;
   const totalChecked = R.equivalence.reduce((a, e) => a + e.random_samples + e.exhaustive_strings, 0);
-  const cm = R.confusion;
   document.getElementById("kpis").innerHTML = [
-    [R.sizes.length - 1, "pattern DFAs compiled from regular expressions"],
-    [(totalChecked / 1e6).toFixed(2) + "M", `strings checked against Python re, ${eqAll ? "100% agreement" : "with disagreements"}`],
-    [R.timing.analyse_ms_per_url + " ms", "to analyse one URL in Python (13 DFAs + 3 rules)"],
-    [`${cm.tp + cm.tn}/${cm.tp + cm.tn + cm.fp + cm.fn}`, "illustrative URLs classified as labelled"],
+    [(totalChecked / 1e6).toFixed(2) + "M", "test strings: every DFA gave the same answer as Python's regex engine"],
+    [R.timing.analyse_ms_per_url + " ms", "to check one URL with all 13 DFAs"],
+    [`${cm.tp + cm.tn} / ${cm.tp + cm.tn + cm.fp + cm.fn}`, "example URLs classified correctly"],
   ].map(([n, l]) => `<div class="kpi"><span class="n">${n}</span><span class="l">${l}</span></div>`).join("");
-
-  // size chart: grouped horizontal bars
-  const rows = R.sizes, max = Math.max(...rows.map((r) => r.nfa_states));
-  const W = 1000, left = 170, right = 120, rowH = 34, barH = 8, top = 26;
-  const H = top + rows.length * rowH + 10;
-  const x = (v) => left + (v / max) * (W - left - right);
-  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Automaton state counts per pattern">`;
-  for (let v = 0; v <= max; v += 20) s += `<line class="grid" x1="${x(v)}" x2="${x(v)}" y1="${top - 8}" y2="${H - 6}"/><text x="${x(v)}" y="${top - 12}" text-anchor="middle">${v}</text>`;
-  rows.forEach((r, i) => {
-    const y = top + i * rowH;
-    const name = r.id === "union_keywords" ? "union of 9 keywords" : r.id.replace("kw_", "");
-    s += `<text x="${left - 10}" y="${y + 15}" text-anchor="end">${esc(name)}</text>`;
-    [["nfa_states", "var(--c1)"], ["subset_dfa_states", "var(--c2)"], ["min_dfa_states", "var(--c3)"]].forEach(([k, col], j) => {
-      const by = y + 2 + j * (barH + 1);
-      s += `<rect x="${left}" y="${by}" width="${Math.max(1, x(r[k]) - left)}" height="${barH}" rx="2" fill="${col}"><title>${name}: ${r[k]}</title></rect>`;
-    });
-    s += `<text x="${x(r.nfa_states) + 6}" y="${y + 10}">${r.nfa_states}→${r.subset_dfa_states}→${r.min_dfa_states}</text>`;
-  });
-  document.getElementById("size-chart").innerHTML = s + "</svg>";
-
-  document.getElementById("eq-table").innerHTML = `<thead><tr><th>Pattern</th><th class="num">Random</th><th class="num">Exhaustive</th><th class="num">L</th></tr></thead><tbody>` +
-    R.equivalence.map((e) => `<tr><td class="mono" style="font-size:.8rem">${e.id === "union_keywords" ? "union" : e.id.replace("kw_", "")}</td><td class="num">${e.random_agree.toLocaleString()}/${e.random_samples.toLocaleString()}</td><td class="num">${e.exhaustive_agree.toLocaleString()}/${e.exhaustive_strings.toLocaleString()}</td><td class="num">${e.exhaustive_max_len}</td></tr>`).join("") + "</tbody>";
-
-  // timing chart
-  const T = R.timing.dfa_scan, tw = 520, th = 230, tl = 54, tb = 40, tt = 24, tr = 34;
-  const mx = Math.max(...T.map((d) => d.length)), my = Math.ceil(Math.max(...T.map((d) => d.ms)));
-  const X = (v) => tl + (v / mx) * (tw - tl - tr), Y = (v) => th - tb - (v / my) * (th - tb - tt);
-  let t = `<svg viewBox="0 0 ${tw} ${th}" role="img" aria-label="DFA scan time versus input length">`;
-  for (let v = 0; v <= my; v += Math.max(1, Math.round(my / 5))) t += `<line class="grid" x1="${tl}" x2="${tw - tr}" y1="${Y(v)}" y2="${Y(v)}"/><text x="${tl - 8}" y="${Y(v) + 4}" text-anchor="end">${v}</text>`;
-  T.forEach((d) => { t += `<text x="${X(d.length)}" y="${th - tb + 16}" text-anchor="middle">${d.length / 1000}k</text>`; });
-  t += `<text x="${(tl + tw - tr) / 2}" y="${th - 6}" text-anchor="middle">input length (characters)</text>`;
-  t += `<text x="14" y="${(th - tb) / 2}" text-anchor="middle" transform="rotate(-90 14 ${(th - tb) / 2})">ms</text>`;
-  t += `<path d="M${X(0)},${Y(0)} ${T.map((d) => `L${X(d.length)},${Y(d.ms)}`).join(" ")} L${X(mx)},${Y(0)} Z" fill="var(--accent-soft)"/>`;
-  t += `<path d="M${X(0)},${Y(0)} ${T.map((d) => `L${X(d.length)},${Y(d.ms)}`).join(" ")}" fill="none" stroke="var(--accent)" stroke-width="2.2"/>`;
-  T.forEach((d, i) => { t += `<circle cx="${X(d.length)}" cy="${Y(d.ms)}" r="${i === T.length - 1 ? 5 : 3.5}" fill="var(--accent)"><title>${d.length} chars: ${d.ms} ms</title></circle>`; });
-  const last = T[T.length - 1];
-  t += `<text x="${X(last.length) - 10}" y="${Y(last.ms) - 12}" text-anchor="end" style="fill:var(--fg)">${last.ms} ms · ${last.us_per_char} µs/char</text>`;
-  document.getElementById("time-chart").innerHTML = t + "</svg>";
-
   document.getElementById("cm").innerHTML = `<div class="h"></div><div class="h">flagged</div><div class="h">not flagged</div>
-    <div class="h">phish</div><div class="ok"><b>${cm.tp}</b>true pos.</div><div class="bad"><b>${cm.fn}</b>false neg.</div>
-    <div class="h">benign</div><div class="bad"><b>${cm.fp}</b>false pos.</div><div class="ok"><b>${cm.tn}</b>true neg.</div>`;
+    <div class="h">phishing</div><div class="ok"><b>${cm.tp}</b>caught</div><div class="bad"><b>${cm.fn}</b>missed</div>
+    <div class="h">safe</div><div class="bad"><b>${cm.fp}</b>false alarm</div><div class="ok"><b>${cm.tn}</b>correct</div>`;
   const nm = (id) => id.replace("kw_", "").replace("_", " ");
-  document.getElementById("ex-table").innerHTML = `<thead><tr><th>URL</th><th>Label</th><th class="num">Score</th><th>Class</th><th>Indicators</th></tr></thead><tbody>` +
-    R.examples.map((r) => `<tr data-url="${esc(r.url)}" tabindex="0"><td class="u">${esc(r.url)}</td><td class="lbl">${r.label}</td><td class="num" style="text-align:right;font-family:var(--font-mono)">${r.score}</td><td><span class="pill ${riskClass(r.classification)}" style="font-size:.74rem;padding:3px 9px">${r.classification}</span></td><td class="ind">${r.indicators.map(nm).join(", ") || "—"}</td></tr>`).join("") + "</tbody>";
+  document.getElementById("ex-table").innerHTML = `<thead><tr><th>URL</th><th>Really</th><th class="num">Score</th><th>Result</th><th>Found</th></tr></thead><tbody>` +
+    R.examples.map((r) => `<tr data-url="${esc(r.url)}" tabindex="0"><td class="u">${esc(r.url)}</td><td class="lbl">${r.label === "phish" ? "phishing" : "safe"}</td><td class="num" style="text-align:right;font-family:var(--font-mono)">${r.score}</td><td><span class="pill ${riskClass(r.classification)}" style="font-size:.74rem;padding:3px 9px">${r.classification}</span></td><td class="ind">${r.indicators.map(nm).join(", ") || "—"}</td></tr>`).join("") + "</tbody>";
 }
 renderResults();
 const exTable = document.getElementById("ex-table");
@@ -1591,16 +1377,8 @@ const openRow = (tr) => {
 exTable.addEventListener("click", (e) => openRow(e.target.closest("tr")));
 exTable.addEventListener("keydown", (e) => { if (e.key === "Enter") openRow(e.target.closest("tr")); });
 
-document.getElementById("bench-btn").addEventListener("click", () => {
-  const m = compileRegex(".*login.*").min;
-  const pool = "loginabcxyz./-";
-  let s = ""; for (let i = 0; i < 1000000; i++) s += pool[(i * 7919) % pool.length];
-  const t0 = performance.now(); runDFA(m, s); const ms = performance.now() - t0;
-  document.getElementById("bench-out").textContent = `1,000,000 characters in ${ms.toFixed(1)} ms (${(ms * 1000 / 1e6).toFixed(3)} µs per character), JavaScript engine.`;
-});
-
 /* ---- initial state ---- */
 renderAnalysis(document.getElementById("url-input").value);
-sim.load("kw_login", "http://secure-update.mybank.verify.example.net/account/login");
+sim.load("kw_login", "http://blog-login.example.com");
 renderLab(".*login.*");
 </script>
