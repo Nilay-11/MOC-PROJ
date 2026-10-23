@@ -44,7 +44,7 @@ const numbered = (text, ref = "numbers") => new Paragraph({ children: runs(text)
 const eq = (text) => new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 60, after: 120 }, children: [new TextRun({ text, font: "Cambria Math", size: 23 })] });
 const code = (lines) => lines.map((l, i) => new Paragraph({
   spacing: { after: 0, line: 252, before: i === 0 ? 80 : 0 },
-  shading: { type: ShadingType.CLEAR, color: "auto", fill: "F2F4F8" },
+  shading: { type: ShadingType.CLEAR, color: "auto", fill: "FFFFFF" },
   indent: { left: 200, right: 200 },
   children: [new TextRun({ text: l || " ", font: MONO, size: 18 })],
 })).concat([new Paragraph({ spacing: { after: 120 }, children: [] })]);
@@ -67,7 +67,7 @@ function table(header, rows, widths, caption, opts = {}) {
   const total = widths.reduce((a, b) => a + b, 0);
   const cell = (t, isHead, w, i) => new TableCell({
     borders, width: { size: w, type: WidthType.DXA }, verticalAlign: VerticalAlign.CENTER,
-    shading: isHead ? { type: ShadingType.CLEAR, color: "auto", fill: "DCE3F3" } : undefined,
+    shading: isHead ? { type: ShadingType.CLEAR, color: "auto", fill: "FFFFFF" } : undefined,
     margins: { top: 50, bottom: 50, left: 90, right: 90 },
     children: [new Paragraph({
       alignment: (opts.center && opts.center.includes(i)) ? AlignmentType.CENTER : AlignmentType.LEFT,
@@ -114,7 +114,7 @@ const cover = [
     rows: [["Team Member", "Register Number"], ["Nilay Sengupta", "25BYB0255"], ["Adwit Agarwal", "25BYB0116"]].map((r, i) => new TableRow({
       children: r.map((t, j) => new TableCell({
         borders, width: { size: j ? 2400 : 3600, type: WidthType.DXA },
-        shading: i === 0 ? { type: ShadingType.CLEAR, color: "auto", fill: "DCE3F3" } : undefined,
+        shading: i === 0 ? { type: ShadingType.CLEAR, color: "auto", fill: "FFFFFF" } : undefined,
         margins: { top: 80, bottom: 80, left: 120, right: 120 },
         children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: t, bold: i === 0, size: 24 })] })],
       })),
