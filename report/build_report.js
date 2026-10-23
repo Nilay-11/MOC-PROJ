@@ -103,7 +103,7 @@ const T = R.timing;
 //  CONTENT
 // ======================================================================
 const cover = [
-  new Paragraph({ spacing: { before: 600, after: 120 }, alignment: AlignmentType.CENTER, children: [new TextRun({ text: "MODEL OF COMPUTATION", bold: true, size: 30, color: ACCENT })] }),
+  new Paragraph({ spacing: { before: 600, after: 120 }, alignment: AlignmentType.CENTER, children: [new TextRun({ text: "MODELS OF COMPUTATION", bold: true, size: 30, color: ACCENT })] }),
   new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 700 }, children: [new TextRun({ text: "Project Report", size: 26 })] }),
   new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 160 }, children: [new TextRun({ text: "Rule-Based Phishing URL Detector", bold: true, size: 48 })] }),
   new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 700 }, children: [new TextRun({ text: "Using Finite Automata", bold: true, size: 48 })] }),
@@ -120,7 +120,7 @@ const cover = [
       })),
     })),
   }),
-  new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 600, after: 80 }, children: [new TextRun({ text: "Subject: Theory of Computation / Model of Computation (MOC)", size: 24 })] }),
+  new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 600, after: 80 }, children: [new TextRun({ text: "Subject: Models of Computation (MOC)", size: 24 })] }),
   new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 80 }, children: [new TextRun({ text: "Project Type: Mini Project", size: 24 })] }),
   new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 80 }, children: [new TextRun({ text: "Faculty: ______________________________", size: 24 })] }),
   new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 80 }, children: [new TextRun({ text: "October 2026", size: 24 })] }),
@@ -128,7 +128,7 @@ const cover = [
 
 const abstractText =
   "Phishing attacks lure users to fraudulent websites through deceptive URLs, and many of these URLs share recognisable textual patterns. " +
-  "This project investigates how such patterns can be detected with the models of computation studied in Theory of Computation. " +
+  "This project investigates how such patterns can be detected with the models studied in the Models of Computation course. " +
   "The objective is an explainable, rule-based phishing URL detector in which every suspicious pattern is a regular language recognised by a finite automaton. " +
   "A URL is modelled as a string over a 60-symbol alphabet Σ. Thirteen patterns, nine suspicious keywords, the “@” symbol, an IPv4 address used as the hostname, punycode hosts and “//” redirections, are written as regular expressions. " +
   "Each expression is converted into an NFA with ε-moves, turned into a DFA by the subset construction, and reduced to a minimal DFA by partition refinement. " +
@@ -143,7 +143,7 @@ const abstract = [
   P(abstractText),
   new Paragraph({ spacing: { before: 200, after: 140 }, alignment: AlignmentType.JUSTIFIED, children: [
     new TextRun({ text: "Keywords: ", bold: true }),
-    new TextRun("Model of Computation, Finite Automata (DFA, NFA), Regular Expressions, Phishing URL Detection, Cybersecurity, Subset Construction, DFA Minimisation, Rule-Based Risk Scoring."),
+    new TextRun("Models of Computation, Finite Automata (DFA, NFA), Regular Expressions, Phishing URL Detection, Cybersecurity, Subset Construction, DFA Minimisation, Rule-Based Risk Scoring."),
   ] }),
 ];
 
@@ -166,7 +166,7 @@ const intro = [
   H1("1. Introduction"),
   H2("1.1 Background"),
   P("Phishing is a social-engineering attack in which an attacker imitates a trusted service, such as a bank, an e-mail provider or a university portal, to trick a user into revealing credentials or installing malware. The link the victim is asked to open is the attacker's main delivery mechanism, so the URL itself often carries the first warning signs: words such as ⟪login⟫, ⟪verify⟫ or ⟪account⟫ placed in unusual positions, an “@” that hides the real host, a raw IP address instead of a domain name, unusually many subdomain levels, or encoded internationalised hostnames."),
-  P("Production systems detect phishing with blocklists, reputation services and machine-learning classifiers. Those methods are effective but often opaque. They need large labelled datasets, and their decisions are hard to explain. A Theory of Computation course offers another view of the same problem: a URL is a finite string over a finite alphabet, and a “suspicious pattern” is a set of strings, that is, a formal language. When that language is regular, a finite automaton can recognise it exactly, in a single left-to-right pass, with constant memory."),
+  P("Production systems detect phishing with blocklists, reputation services and machine-learning classifiers. Those methods are effective but often opaque. They need large labelled datasets, and their decisions are hard to explain. A Models of Computation course offers another view of the same problem: a URL is a finite string over a finite alphabet, and a “suspicious pattern” is a set of strings, that is, a formal language. When that language is regular, a finite automaton can recognise it exactly, in a single left-to-right pass, with constant memory."),
   P("This project builds a phishing URL detector on that idea. It does not claim that finite automata solve phishing detection. Instead it shows, with working code and measured results, how regular patterns that occur in URLs can be specified formally, compiled into automata by the standard constructions, verified, and combined into a transparent risk assessment."),
   H2("1.2 Problem Statement"),
   P("Design and implement a rule-based system that accepts a URL as a string, analyses it for predefined suspicious patterns using finite automata, performs additional structural checks, and produces an interpretable risk classification. Every pattern must be expressed as a regular expression and recognised by a deterministic finite automaton that is derived from the expression by the formal constructions of automata theory (regular expression → NFA → DFA → minimal DFA), rather than coded by hand."),
@@ -376,7 +376,7 @@ const discussion = [
 const conclusion = [
   H1("6. Conclusion and Future Scope"),
   H2("6.1 Conclusion"),
-  P("This project applied the models of computation from Theory of Computation to a real cybersecurity problem. URLs were modelled as strings over a 60-symbol alphabet, and thirteen suspicious patterns were specified as regular expressions. Each expression was compiled by the standard constructions, converted into an NFA, determinised by the subset construction and minimised by partition refinement, into a minimal DFA that scans the relevant part of the URL in linear time. The DFA verdicts and three structural rules produce a transparent risk score and class."),
+  P("This project applied the models studied in Models of Computation to a real cybersecurity problem. URLs were modelled as strings over a 60-symbol alphabet, and thirteen suspicious patterns were specified as regular expressions. Each expression was compiled by the standard constructions, converted into an NFA, determinised by the subset construction and minimised by partition refinement, into a minimal DFA that scans the relevant part of the URL in linear time. The DFA verdicts and three structural rules produce a transparent risk score and class."),
   P(`The implementation includes a Python engine, a Flask API and an interactive website with a live analyzer, a step-by-step DFA simulator and a construction lab. It was verified against Python's regular-expression engine on ${(eqTot / 1e6).toFixed(2)} million strings with no disagreements, and it scans URLs at about ${T.dfa_scan[0].us_per_char} µs per character. On an illustrative set it flagged ${cm.tp} of 12 phishing-style URLs with one false positive among 10 benign URLs. The errors it made follow directly from the limits of keyword-based, regular-language recognition. The project therefore shows both the practical value of alphabets, regular expressions, NFAs, DFAs, the subset construction and minimisation, and the boundary of what these models can decide on their own.`),
   H2("6.2 Future Enhancements"),
   bullet("Add a trusted-domain allowlist and percent-decoding before the automata run, to reduce false positives and resist encoding tricks."),
@@ -429,7 +429,7 @@ const appendix = [
 const doc = new Document({
   creator: "Nilay Sengupta, Adwit Agarwal",
   title: "Rule-Based Phishing URL Detector Using Finite Automata",
-  description: "Model of Computation project report",
+  description: "Models of Computation project report",
   styles: {
     default: { document: { run: { font: FONT, size: 24 } } },
     paragraphStyles: [

@@ -1,6 +1,6 @@
 # PhishDFA: Rule-Based Phishing URL Detector Using Finite Automata
 
-MOC (Theory of Computation) mini project by **Nilay Sengupta (25BYB0255)** and **Adwit Agarwal (25BYB0116)**.
+MOC (Models of Computation) mini project by **Nilay Sengupta (25BYB0255)** and **Adwit Agarwal (25BYB0116)**.
 
 Every suspicious URL pattern is written as a regular expression and compiled by the textbook pipeline
 
