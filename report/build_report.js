@@ -122,7 +122,7 @@ const cover = [
   }),
   new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 600, after: 80 }, children: [new TextRun({ text: "Subject: Models of Computation (MOC)", size: 24 })] }),
   new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 80 }, children: [new TextRun({ text: "Project Type: Mini Project", size: 24 })] }),
-  new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 80 }, children: [new TextRun({ text: "Faculty: ______________________________", size: 24 })] }),
+  new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 80 }, children: [new TextRun({ text: "Faculty: Dr. Dharmendra Singh Rajput", size: 24 })] }),
   new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 80 }, children: [new TextRun({ text: "October 2026", size: 24 })] }),
 ];
 
