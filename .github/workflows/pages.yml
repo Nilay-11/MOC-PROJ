@@ -1,0 +1,44 @@
+name: Deploy website to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build site
+        # website/index.html is written without <html>/<head> tags (the claude.ai
+        # artifact host adds them), so wrap it in a full document here.
+        run: |
+          mkdir -p _site
+          {
+            echo '<!doctype html>'
+            echo '<html lang="en"><head><meta charset="utf-8">'
+            echo '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">'
+            echo '<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>'
+            cat website/index.html
+            echo '</html>'
+          } > _site/index.html
+          cp report/MOC_Project_Report_Phishing_URL_Detector.pdf _site/report.pdf
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v4

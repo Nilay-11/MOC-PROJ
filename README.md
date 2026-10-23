@@ -27,4 +27,4 @@ python app.py                 # http://127.0.0.1:5000
 node report/build_report.js   # rebuild the report (needs the `docx` npm package)
 ```
 
-You can also open `website/index.html` directly in a browser, with no server.
+Live site: https://nilay-11.github.io/MOC-PROJ/ (deployed by `.github/workflows/pages.yml`). You can also open `website/index.html` directly in a browser, with no server.
