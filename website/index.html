@@ -1,0 +1,1606 @@
+<title>PhishDFA</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Rule-based phishing URL detector built on regular languages and finite automata. MOC mini project by Nilay Sengupta and Adwit Agarwal.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: an instrument bench. Each section is one apparatus (analyzer, tape machine,
+   construction lab) on a dark blueprint ground; states glow periwinkle while running
+   and accepting states are drawn in gold, as in a textbook double circle. */
+:root {
+  --bg: #0a0f1e;
+  --bg-2: #0e1528;
+  --surface: #131b33;
+  --surface-2: #19223f;
+  --line: #26325a;
+  --grid: rgba(124, 156, 255, .06);
+  --fg: #e8ecf7;
+  --muted: #95a1c2;
+  --accent: #8ba6ff;
+  --accent-soft: rgba(139, 166, 255, .16);
+  --accept: #ffd166;
+  --accept-soft: rgba(255, 209, 102, .14);
+  --low: #3fd49b;
+  --mid: #ff9f43;
+  --high: #ff5f7a;
+  --c1: #5a6a9a;
+  --c2: #8ba6ff;
+  --c3: #ffd166;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --radius: 14px;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #f4f6fc; --bg-2: #eaeef8; --surface: #ffffff; --surface-2: #f1f4fb; --line: #d5dcec;
+    --grid: rgba(59, 91, 219, .06); --fg: #111a30; --muted: #56627f; --accent: #3b5bdb;
+    --accent-soft: rgba(59, 91, 219, .12); --accept: #a86a00; --accept-soft: rgba(196, 128, 0, .12);
+    --low: #11875b; --mid: #c25e05; --high: #d42f4e; --c1: #a9b4d0; --c2: #3b5bdb; --c3: #c98a00;
+    color-scheme: light;
+  }
+}
+:root[data-theme="light"] {
+  --bg: #f4f6fc; --bg-2: #eaeef8; --surface: #ffffff; --surface-2: #f1f4fb; --line: #d5dcec;
+  --grid: rgba(59, 91, 219, .06); --fg: #111a30; --muted: #56627f; --accent: #3b5bdb;
+  --accent-soft: rgba(59, 91, 219, .12); --accept: #a86a00; --accept-soft: rgba(196, 128, 0, .12);
+  --low: #11875b; --mid: #c25e05; --high: #d42f4e; --c1: #a9b4d0; --c2: #3b5bdb; --c3: #c98a00;
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font: 16px/1.6 var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+body::before {
+  content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px);
+  z-index: 10; background: var(--bg);
+}
+a { color: var(--accent); }
+code, .mono { font-family: var(--font-mono); font-size: .9em; }
+h1, h2, h3 { font-family: var(--font-display); line-height: 1.1; text-wrap: balance; margin: 0; }
+h2 { font-size: clamp(1.9rem, 4vw, 2.8rem); font-weight: 800; letter-spacing: -.02em; }
+h3 { font-size: 1.2rem; font-weight: 700; }
+p { margin: 0; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+
+.wrap {
+  max-width: 1200px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.band { padding-block: 88px; border-top: 1px solid var(--line); }
+.band.alt { background: var(--bg-2); }
+.eyebrow {
+  font: 600 .75rem/1 var(--font-mono); letter-spacing: .14em; text-transform: uppercase;
+  color: var(--accent); display: inline-flex; gap: 10px; align-items: center;
+}
+.eyebrow b { color: var(--muted); font-weight: 400; }
+.sec-head { display: grid; gap: 14px; max-width: 760px; margin-bottom: 40px; }
+.sec-head p { color: var(--muted); font-size: 1.06rem; max-width: 66ch; }
+
+/* nav */
+.nav {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20;
+  background: color-mix(in srgb, var(--bg) 86%, transparent);
+  backdrop-filter: blur(10px); border-bottom: 1px solid var(--line);
+}
+.nav .wrap { display: flex; align-items: center; gap: 24px; height: 60px; }
+.brand { font: 800 1.15rem var(--font-display); color: var(--fg); text-decoration: none; display: flex; gap: 10px; align-items: center; white-space: nowrap; }
+.brand-mark { width: 26px; height: 26px; }
+.nav ul { display: flex; gap: 4px; list-style: none; margin: 0 0 0 auto; padding: 0; overflow-x: auto; scrollbar-width: none; }
+.nav ul a {
+  display: block; padding: 6px 12px; border-radius: 999px; color: var(--muted);
+  text-decoration: none; font-size: .9rem; white-space: nowrap;
+}
+.nav ul a:hover { color: var(--fg); background: var(--surface-2); }
+@media (max-width: 760px) { .nav ul { display: none; } }
+
+/* hero */
+.hero {
+  padding-block: 72px 80px; position: relative; overflow: hidden;
+  background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+.hero-grid { display: grid; grid-template-columns: 1.05fr 1fr; gap: 48px; align-items: center; }
+.hero-grid > * { min-width: 0; }
+@media (max-width: 960px) { .hero-grid { grid-template-columns: 1fr; } }
+.hero h1 { font-size: clamp(2.6rem, 6.4vw, 4.6rem); font-weight: 800; letter-spacing: -.035em; margin-top: 18px; }
+.hero h1 em { font-style: normal; color: var(--accept); }
+.hero .lead { margin-top: 22px; font-size: 1.15rem; color: var(--muted); max-width: 54ch; }
+.hero-meta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 26px; }
+.chip {
+  display: inline-flex; gap: 8px; align-items: center; padding: 6px 12px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--surface); font-size: .85rem; color: var(--muted);
+}
+.chip strong { color: var(--fg); font-weight: 600; }
+.cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
+.btn {
+  appearance: none; border: 1px solid var(--line); background: var(--surface); color: var(--fg);
+  font: 600 .95rem var(--font-body); padding: 11px 18px; border-radius: 10px; cursor: pointer;
+  text-decoration: none; display: inline-flex; gap: 8px; align-items: center; transition: transform .12s, background .12s, border-color .12s;
+}
+.btn:hover { border-color: var(--accent); }
+.btn:active { transform: translateY(1px); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.small { padding: 7px 12px; font-size: .85rem; border-radius: 8px; }
+.btn:disabled { opacity: .45; cursor: default; }
+
+.machine {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 18px;
+  box-shadow: 0 30px 80px -40px rgba(0, 0, 0, .6);
+}
+.machine-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; font: 500 .78rem var(--font-mono); color: var(--muted); }
+.machine-top .verdict { padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line); }
+.machine-top .verdict.acc { color: var(--accept); border-color: var(--accept); background: var(--accept-soft); }
+.diagram { overflow-x: auto; margin-top: 8px; }
+.diagram svg { display: block; margin: 0 auto; max-width: none; }
+
+/* tape */
+.tape-wrap { overflow-x: auto; padding: 6px 2px 4px; scrollbar-width: thin; }
+.tape { display: inline-flex; gap: 0; font-family: var(--font-mono); }
+.cell { display: grid; grid-template-rows: auto auto; text-align: center; min-width: 30px; }
+.cell .ch {
+  height: 38px; display: grid; place-items: center; border: 1px solid var(--line); border-right-width: 0;
+  background: var(--surface-2); font-size: .98rem; position: relative;
+}
+.cell:last-child .ch { border-right-width: 1px; }
+.cell .st { font-size: .66rem; color: var(--muted); padding-top: 4px; height: 20px; }
+.cell.read .ch { color: var(--muted); }
+.cell.head .ch { background: var(--accent-soft); color: var(--fg); box-shadow: inset 0 -3px 0 var(--accent); }
+.cell.match .ch { color: var(--accept); }
+.cell.start .ch { background: transparent; border: 0; color: var(--muted); font-size: .7rem; }
+
+/* svg automaton */
+.node circle { fill: var(--surface-2); stroke: var(--muted); stroke-width: 1.6; transition: fill .2s, stroke .2s; }
+.node .ring { fill: none; stroke: var(--accept); stroke-width: 1.6; }
+.node.acc > circle.body { stroke: var(--accept); }
+.node.dead circle.body { stroke-dasharray: 4 3; }
+.node text { fill: var(--fg); font: 600 13px var(--font-mono); text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+.node.cur circle.body { fill: var(--accent); stroke: var(--accent); }
+.node.cur text { fill: var(--bg); }
+.node.cur.acc circle.body { fill: var(--accept); stroke: var(--accept); }
+.node.cur .halo { opacity: 1; }
+.node .halo { fill: var(--accent-soft); stroke: none; opacity: 0; transition: opacity .2s; }
+.node.cur.acc .halo { fill: var(--accept-soft); }
+.edge path { fill: none; stroke: var(--muted); stroke-width: 1.4; }
+.edge.faint path { stroke-opacity: .45; }
+.edge text { fill: var(--muted); font: 500 11.5px var(--font-mono); text-anchor: middle; paint-order: stroke; stroke: var(--surface); stroke-width: 5px; stroke-linejoin: round; }
+.edge.eps text { font-style: italic; }
+.edge.active path { stroke: var(--accent); stroke-width: 2.4; stroke-opacity: 1; }
+.edge.active text { fill: var(--accent); font-weight: 600; }
+.start-arrow { stroke: var(--muted); stroke-width: 1.6; fill: none; }
+.mk-default { fill: var(--muted); }
+.mk-active { fill: var(--accent); }
+
+/* analyzer */
+.analyze-form { display: flex; gap: 10px; flex-wrap: wrap; }
+.analyze-form input {
+  flex: 1 1 380px; min-width: 0; font: 500 1.02rem var(--font-mono); padding: 14px 16px; border-radius: 12px;
+  border: 1px solid var(--line); background: var(--surface); color: var(--fg);
+}
+.analyze-form input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+.samples { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; align-items: center; }
+.samples span { font-size: .82rem; color: var(--muted); margin-right: 4px; }
+.sample {
+  font: 500 .78rem var(--font-mono); padding: 5px 10px; border-radius: 999px; border: 1px solid var(--line);
+  background: transparent; color: var(--muted); cursor: pointer; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.sample:hover { color: var(--fg); border-color: var(--accent); }
+.result-grid { display: grid; grid-template-columns: 320px 1fr; gap: 20px; margin-top: 28px; }
+.result-grid > * { min-width: 0; }
+@media (max-width: 900px) { .result-grid { grid-template-columns: 1fr; } }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px; }
+.panel h3 { margin-bottom: 14px; }
+.panel-label { font: 600 .72rem var(--font-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; display: block; }
+.gauge { display: grid; justify-items: center; gap: 4px; }
+.gauge svg { width: 100%; max-width: 260px; height: auto; }
+.gauge .score { font: 800 3.2rem/1 var(--font-display); }
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; font: 600 .85rem var(--font-body); border: 1px solid currentColor; }
+.pill.low { color: var(--low); background: color-mix(in srgb, var(--low) 12%, transparent); }
+.pill.mid { color: var(--mid); background: color-mix(in srgb, var(--mid) 12%, transparent); }
+.pill.high { color: var(--high); background: color-mix(in srgb, var(--high) 12%, transparent); }
+.thresholds { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 18px; width: 100%; font-size: .75rem; text-align: center; color: var(--muted); }
+.thresholds div { border-top: 3px solid; padding-top: 6px; }
+.breakdown { width: 100%; margin-top: 18px; border-collapse: collapse; font-size: .86rem; }
+.breakdown td { padding: 5px 0; border-bottom: 1px dashed var(--line); }
+.breakdown td:last-child { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.breakdown tr.total td { border-bottom: 0; font-weight: 700; padding-top: 10px; }
+
+.urlbar { font: 500 .98rem/2 var(--font-mono); word-break: break-all; background: var(--surface-2); border-radius: 10px; padding: 12px 14px; border: 1px solid var(--line); }
+.seg { border-radius: 4px; padding: 2px 1px; }
+.seg-scheme { color: var(--muted); }
+.seg-userinfo { background: color-mix(in srgb, var(--high) 22%, transparent); }
+.seg-sub { background: color-mix(in srgb, var(--mid) 20%, transparent); }
+.seg-domain { background: color-mix(in srgb, var(--accent) 24%, transparent); font-weight: 600; }
+.seg-port { color: var(--muted); }
+.seg-path { background: color-mix(in srgb, var(--low) 16%, transparent); }
+.seg-query { background: color-mix(in srgb, var(--accept) 18%, transparent); }
+.seg-frag { color: var(--muted); }
+.comp-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px 16px; margin-top: 14px; font-size: .84rem; }
+.comp-list div { display: grid; gap: 2px; min-width: 0; }
+.comp-list dt { color: var(--muted); font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; display: flex; gap: 6px; align-items: center; }
+.comp-list dd { margin: 0; font-family: var(--font-mono); overflow-wrap: anywhere; }
+.swatch { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+
+.findings { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; }
+.finding {
+  border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: grid; gap: 8px;
+  background: var(--surface-2); position: relative;
+}
+.finding.hit { border-color: color-mix(in srgb, var(--accept) 55%, var(--line)); background: var(--accept-soft); }
+.finding .top { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.finding .name { font-weight: 600; font-size: .93rem; }
+.finding .w { font: 600 .8rem var(--font-mono); color: var(--muted); white-space: nowrap; }
+.finding.hit .w { color: var(--accept); }
+.finding .re { font: .78rem var(--font-mono); color: var(--muted); overflow-wrap: anywhere; }
+.finding .state { font: .82rem var(--font-mono); display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.tag { font: 700 .68rem var(--font-mono); letter-spacing: .08em; padding: 3px 7px; border-radius: 6px; }
+.tag.acc { color: var(--bg); background: var(--accept); }
+.tag.rej { color: var(--muted); border: 1px solid var(--line); }
+.finding .snip { font: .78rem var(--font-mono); color: var(--muted); overflow-wrap: anywhere; }
+.finding .snip mark { background: transparent; color: var(--accept); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.link-btn { appearance: none; background: none; border: 0; color: var(--accent); font: 600 .8rem var(--font-body); cursor: pointer; padding: 0; justify-self: start; }
+.link-btn:hover { text-decoration: underline; }
+.rules { display: grid; gap: 8px; margin-top: 12px; }
+.rule { display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface-2); font-size: .9rem; }
+.rule.hit { border-color: color-mix(in srgb, var(--mid) 60%, var(--line)); }
+.rule small { color: var(--muted); font-family: var(--font-mono); }
+
+/* simulator */
+.sim { display: grid; grid-template-columns: 1fr 330px; gap: 20px; }
+.sim > * { min-width: 0; }
+@media (max-width: 980px) { .sim { grid-template-columns: 1fr; } }
+.controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.controls select, .controls input[type="text"] {
+  font: 500 .9rem var(--font-mono); padding: 9px 12px; border-radius: 10px; border: 1px solid var(--line);
+  background: var(--surface-2); color: var(--fg); min-width: 0;
+}
+.controls input[type="text"] { flex: 1 1 260px; }
+.controls label { font-size: .82rem; color: var(--muted); display: flex; gap: 8px; align-items: center; }
+.transport { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-top: 14px; }
+.step-note { font: .9rem var(--font-mono); margin-top: 14px; padding: 12px 14px; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--line); min-height: 48px; overflow-wrap: anywhere; }
+.step-note b { color: var(--accent); }
+.step-note .acc { color: var(--accept); font-weight: 600; }
+.tuple { font: .84rem/1.75 var(--font-mono); overflow-wrap: anywhere; }
+.tuple .k { color: var(--accent); }
+.tt-wrap { overflow-x: auto; margin-top: 14px; }
+table.tt { border-collapse: collapse; font: .8rem var(--font-mono); font-variant-numeric: tabular-nums; }
+table.tt th, table.tt td { padding: 6px 9px; border: 1px solid var(--line); text-align: center; white-space: nowrap; }
+table.tt th { color: var(--muted); font-weight: 600; background: var(--surface-2); }
+table.tt td.rowh { text-align: left; font-weight: 600; }
+table.tt tr.cur td { background: var(--accent-soft); }
+table.tt td.hot { background: var(--accent); color: var(--bg); font-weight: 700; }
+table.tt th.hot { color: var(--accent); }
+table.tt .accst { color: var(--accept); }
+
+/* construction lab */
+.lab-input { display: flex; gap: 10px; flex-wrap: wrap; }
+.lab-input input { flex: 1 1 320px; min-width: 0; font: 500 1rem var(--font-mono); padding: 12px 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); }
+.lab-input input:focus { outline: none; border-color: var(--accent); }
+.lab-err { color: var(--high); font-size: .88rem; margin-top: 8px; min-height: 1.2em; }
+.pipeline-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin: 24px 0 8px; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: var(--surface); }
+.pipeline-stats > div { padding: 18px; border-right: 1px solid var(--line); display: grid; gap: 4px; position: relative; }
+.pipeline-stats > div:last-child { border-right: 0; }
+.pipeline-stats .n { font: 800 2.2rem/1 var(--font-display); font-variant-numeric: tabular-nums; }
+.pipeline-stats .l { font-size: .8rem; color: var(--muted); }
+.pipeline-stats .alg { font: .72rem var(--font-mono); color: var(--accent); }
+@media (max-width: 720px) { .pipeline-stats { grid-template-columns: repeat(2, 1fr); } .pipeline-stats > div:nth-child(2) { border-right: 0; } .pipeline-stats > div:nth-child(-n+2) { border-bottom: 1px solid var(--line); } }
+.steps { display: grid; gap: 18px; margin-top: 18px; }
+.step { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px; min-width: 0; }
+.step-h { display: flex; gap: 14px; align-items: baseline; flex-wrap: wrap; margin-bottom: 8px; }
+.step-h .num { font: 700 .8rem var(--font-mono); color: var(--accent); border: 1px solid var(--accent); border-radius: 6px; padding: 2px 7px; }
+.step > p { color: var(--muted); font-size: .94rem; max-width: 80ch; margin-bottom: 14px; }
+.classes { display: flex; flex-wrap: wrap; gap: 8px; }
+.cls { border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; font: .82rem var(--font-mono); background: var(--surface-2); max-width: 100%; overflow-wrap: anywhere; }
+.cls b { color: var(--accent); margin-right: 8px; }
+.rounds { display: grid; gap: 8px; font: .84rem var(--font-mono); }
+.rounds div { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.rounds .r { color: var(--muted); min-width: 74px; }
+.blk { border: 1px solid var(--line); border-radius: 8px; padding: 3px 8px; background: var(--surface-2); }
+.blk.acc { border-color: var(--accept); color: var(--accept); }
+.note { color: var(--muted); font-size: .86rem; }
+
+/* theory */
+.theory-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+.tcard { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.tcard .formula { font: .9rem/1.8 var(--font-mono); background: var(--surface-2); border-radius: 10px; padding: 12px 14px; border: 1px solid var(--line); overflow-x: auto; white-space: nowrap; }
+.tcard p { color: var(--muted); font-size: .93rem; }
+.tcard .use { font-size: .86rem; color: var(--fg); border-top: 1px dashed var(--line); padding-top: 10px; }
+.tcard .use b { color: var(--accept); font-weight: 600; }
+.map-table-wrap { overflow-x: auto; margin-top: 40px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+table.map { border-collapse: collapse; width: 100%; font-size: .92rem; min-width: 640px; }
+table.map th, table.map td { text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--line); vertical-align: top; }
+table.map th { font: 600 .74rem var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); background: var(--surface-2); }
+table.map td:first-child { font-weight: 600; white-space: nowrap; }
+table.map td:nth-child(2) { font-family: var(--font-mono); font-size: .84rem; color: var(--accent); white-space: nowrap; }
+table.map tr:last-child td { border-bottom: 0; }
+
+/* architecture */
+.arch { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; align-items: stretch; }
+@media (max-width: 900px) { .arch { grid-template-columns: 1fr 1fr; gap: 16px; } .arch .mod::after { display: none; } }
+@media (max-width: 520px) { .arch { grid-template-columns: 1fr; } }
+.mod { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; margin-right: 26px; position: relative; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.mod:last-child { margin-right: 0; }
+.mod::after { content: "→"; position: absolute; right: -22px; top: 50%; transform: translateY(-50%); color: var(--accent); font: 700 1.1rem var(--font-mono); }
+.mod:last-child::after { display: none; }
+@media (max-width: 900px) { .mod { margin-right: 0; } }
+.mod .idx { font: 700 .75rem var(--font-mono); color: var(--accent); }
+.mod p { color: var(--muted); font-size: .9rem; }
+.mod code { font-size: .78rem; color: var(--fg); }
+.flowline { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 28px; font: .85rem var(--font-mono); color: var(--muted); }
+.flowline span.s { border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; background: var(--surface); color: var(--fg); }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 32px; }
+.two > * { min-width: 0; }
+@media (max-width: 860px) { .two { grid-template-columns: 1fr; } }
+table.data { border-collapse: collapse; width: 100%; font-size: .9rem; }
+table.data th, table.data td { padding: 9px 10px; border-bottom: 1px solid var(--line); text-align: left; }
+table.data th { font: 600 .72rem var(--font-mono); text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
+table.data td.num, table.data th.num { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+/* results */
+.kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+@media (max-width: 860px) { .kpis { grid-template-columns: repeat(2, 1fr); } }
+.kpi { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; display: grid; gap: 4px; }
+.kpi .n { font: 800 2rem/1.1 var(--font-display); font-variant-numeric: tabular-nums; }
+.kpi .l { font-size: .84rem; color: var(--muted); }
+.chart-wrap { overflow-x: auto; }
+.chart-wrap svg { display: block; width: 100%; min-width: 560px; height: auto; }
+.chart-wrap svg text { fill: var(--muted); font: 11px var(--font-mono); }
+.chart-wrap svg .grid { stroke: var(--line); stroke-width: 1; }
+.legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: .82rem; color: var(--muted); margin-bottom: 10px; }
+.legend i { width: 12px; height: 12px; border-radius: 3px; display: inline-block; margin-right: 6px; vertical-align: -1px; }
+.ex-table-wrap { overflow-x: auto; }
+table.ex { border-collapse: collapse; width: 100%; font-size: .86rem; min-width: 720px; }
+table.ex th, table.ex td { padding: 9px 10px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: middle; }
+table.ex th { font: 600 .72rem var(--font-mono); text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
+table.ex td.u { font-family: var(--font-mono); font-size: .8rem; max-width: 380px; overflow-wrap: anywhere; }
+table.ex tr { cursor: pointer; }
+table.ex tbody tr:hover td { background: var(--surface-2); }
+table.ex .lbl { font: 600 .72rem var(--font-mono); text-transform: uppercase; color: var(--muted); }
+table.ex td.ind { font: .74rem var(--font-mono); color: var(--muted); }
+.cm { display: grid; grid-template-columns: auto 1fr 1fr; gap: 6px; font-size: .86rem; max-width: 380px; }
+.cm div { padding: 12px; border-radius: 8px; text-align: center; background: var(--surface-2); border: 1px solid var(--line); }
+.cm .h { background: transparent; border: 0; color: var(--muted); font-size: .76rem; padding: 6px; display: grid; place-items: center; }
+.cm .ok { border-color: var(--low); }
+.cm .bad { border-color: var(--high); }
+.cm b { display: block; font: 800 1.6rem var(--font-display); }
+
+.limits { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.limits > * { min-width: 0; }
+@media (max-width: 860px) { .limits { grid-template-columns: 1fr; } }
+.limits ul { margin: 12px 0 0; padding-left: 20px; color: var(--muted); display: grid; gap: 8px; }
+.limits li strong { color: var(--fg); font-weight: 600; }
+
+footer { border-top: 1px solid var(--line); padding-block: 48px; color: var(--muted); font-size: .9rem; }
+.foot { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 32px; }
+.foot > * { min-width: 0; }
+@media (max-width: 860px) { .foot { grid-template-columns: 1fr; } }
+.foot h4 { color: var(--fg); font: 700 1rem var(--font-display); margin: 0 0 10px; }
+.foot ol { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
+.team-row { display: grid; gap: 8px; }
+.team-row div { display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px dashed var(--line); padding-bottom: 6px; }
+.team-row span:last-child { font-family: var(--font-mono); color: var(--fg); }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  * { transition: none !important; animation: none !important; }
+}
+</style>
+
+<nav class="nav">
+  <div class="wrap">
+    <a class="brand" href="#top" aria-label="PhishDFA home">
+      <svg class="brand-mark" viewBox="0 0 26 26" aria-hidden="true"><circle cx="13" cy="13" r="11" fill="none" stroke="var(--accept)" stroke-width="1.6"/><circle cx="13" cy="13" r="7.5" fill="var(--accent)"/></svg>
+      PhishDFA
+    </a>
+    <ul>
+      <li><a href="#analyzer">Analyzer</a></li>
+      <li><a href="#simulator">DFA Simulator</a></li>
+      <li><a href="#construction">Regex → NFA → DFA</a></li>
+      <li><a href="#theory">Theory</a></li>
+      <li><a href="#architecture">Architecture</a></li>
+      <li><a href="#results">Results</a></li>
+    </ul>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div class="wrap hero-grid">
+    <div>
+      <span class="eyebrow">MOC Mini Project <b>/</b> Theory of Computation</span>
+      <h1>Catching phishing URLs with <em>finite automata</em>.</h1>
+      <p class="lead">A URL is just a string over an alphabet Σ. We describe suspicious patterns as regular languages, compile each one from a regular expression into a minimal DFA, and let those machines read the URL one character at a time. Their verdicts, plus a few structural rules, add up to an explainable risk score.</p>
+      <div class="hero-meta">
+        <span class="chip"><strong>Nilay Sengupta</strong> 25BYB0255</span>
+        <span class="chip"><strong>Adwit Agarwal</strong> 25BYB0116</span>
+      </div>
+      <div class="cta">
+        <a class="btn primary" href="#analyzer">Analyze a URL</a>
+        <a class="btn" href="#construction">See the automata being built</a>
+      </div>
+    </div>
+    <div class="machine" aria-label="Animated DFA for the keyword login reading a URL">
+      <div class="machine-top">
+        <span>M<sub>login</sub> reads <span id="hero-input"></span></span>
+        <span class="verdict" id="hero-verdict">running</span>
+      </div>
+      <div class="diagram" id="hero-diagram"></div>
+      <div class="tape-wrap" id="hero-tape-wrap"><div class="tape" id="hero-tape"></div></div>
+    </div>
+  </div>
+</header>
+
+<main>
+<section class="band" id="analyzer">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Module 1 + 3 <b>/</b> Live analyzer</span>
+      <h2>Paste a URL. Thirteen DFAs read it.</h2>
+      <p>The URL is lower-cased, split into its components, and handed to one minimal DFA per suspicious pattern. Each DFA either ends in an accepting state (pattern found) or not. Structural rules that are simpler as plain code run alongside them.</p>
+    </div>
+    <form class="analyze-form" id="analyze-form">
+      <label for="url-input" class="panel-label" style="position:absolute;left:-9999px">URL to analyze</label>
+      <input id="url-input" type="text" spellcheck="false" autocomplete="off" value="http://secure-update.mybank.verify.example.net/account/login">
+      <button class="btn primary" type="submit">Analyze</button>
+    </form>
+    <div class="samples" id="samples"><span>Try:</span></div>
+
+    <div class="result-grid">
+      <div class="panel">
+        <span class="panel-label">Risk score</span>
+        <div class="gauge">
+          <svg viewBox="0 0 240 140" id="gauge" aria-hidden="true"></svg>
+          <div class="score" id="score">0</div>
+          <div id="class-pill"></div>
+          <div class="thresholds">
+            <div style="border-color:var(--low)">0–1<br>Low Risk</div>
+            <div style="border-color:var(--mid)">2–3<br>Suspicious</div>
+            <div style="border-color:var(--high)">≥ 4<br>High Risk</div>
+          </div>
+        </div>
+        <table class="breakdown" id="breakdown"></table>
+      </div>
+      <div style="display:grid;gap:20px;min-width:0">
+        <div class="panel">
+          <span class="panel-label">Component extraction</span>
+          <div class="urlbar" id="urlbar"></div>
+          <dl class="comp-list" id="comp-list"></dl>
+        </div>
+        <div class="panel">
+          <span class="panel-label">Automata verdicts <span id="dfa-count"></span></span>
+          <div class="findings" id="findings"></div>
+          <span class="panel-label" style="margin-top:22px">Structural rules</span>
+          <div class="rules" id="rules"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band alt" id="simulator">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Module 2 <b>/</b> MOC automata engine</span>
+      <h2>Step through the computation.</h2>
+      <p>Pick a pattern and watch its DFA apply the transition function δ(q, a) to each symbol of the input. The highlighted cell in the table is the transition being taken. When the input ends, the string is accepted exactly when the machine is in a state of F.</p>
+    </div>
+    <div class="sim">
+      <div class="panel">
+        <div class="controls">
+          <label for="sim-pattern">Pattern</label>
+          <select id="sim-pattern"></select>
+          <label><input type="checkbox" id="sim-dead"> show dead state</label>
+        </div>
+        <div class="controls" style="margin-top:10px">
+          <input type="text" id="sim-input" spellcheck="false" aria-label="Input string">
+        </div>
+        <div class="diagram" id="sim-diagram" style="margin-top:14px"></div>
+        <div class="tape-wrap" id="sim-tape-wrap"><div class="tape" id="sim-tape"></div></div>
+        <div class="transport">
+          <button class="btn small" id="sim-reset" title="Back to the start state">⏮ Reset</button>
+          <button class="btn small" id="sim-back">◀ Step</button>
+          <button class="btn small primary" id="sim-play">▶ Play</button>
+          <button class="btn small" id="sim-fwd">Step ▶</button>
+          <button class="btn small" id="sim-end">Run to end ⏭</button>
+          <label style="font-size:.82rem;color:var(--muted);display:flex;gap:8px;align-items:center;margin-left:auto">speed <input type="range" id="sim-speed" min="1" max="10" value="5"></label>
+        </div>
+        <div class="step-note" id="sim-note"></div>
+      </div>
+      <div class="panel">
+        <span class="panel-label">Formal definition</span>
+        <div class="tuple" id="sim-tuple"></div>
+        <span class="panel-label" style="margin-top:20px">Transition table δ</span>
+        <div class="tt-wrap" id="sim-table"></div>
+        <p class="note" style="margin-top:10px">→ start state, * accepting state. Columns are symbol classes: characters the pattern cannot tell apart share one column.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band" id="construction">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Kleene's theorem in practice <b>/</b> construction lab</span>
+      <h2>From regular expression to minimal DFA.</h2>
+      <p>Every detector pattern is compiled by the same pipeline: the regular expression is converted into an NFA, the subset construction turns it into a DFA, and Moore's partition refinement merges equivalent states. Type any regular expression to watch each stage.</p>
+    </div>
+    <form class="lab-input" id="lab-form">
+      <input id="lab-regex" type="text" spellcheck="false" value=".*login.*" aria-label="Regular expression">
+      <button class="btn primary" type="submit">Build</button>
+    </form>
+    <div class="samples" id="lab-presets"><span>Presets:</span></div>
+    <div class="lab-err" id="lab-err"></div>
+    <div class="pipeline-stats" id="lab-stats"></div>
+    <div class="steps" id="lab-steps"></div>
+  </div>
+</section>
+
+<section class="band alt" id="theory">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Theoretical background</span>
+      <h2>The theory each part of the detector relies on.</h2>
+      <p>Each card states a definition or theorem from automata theory and the place in the detector where it is used.</p>
+    </div>
+    <div class="theory-grid">
+      <article class="tcard">
+        <h3>Alphabet, strings, languages</h3>
+        <div class="formula">Σ = {a…z, 0…9, - . _ ~ : / ? # [ ] @ ! $ &amp; ' ( ) * + , ; = %, ⊥}<br>w ∈ Σ*,&nbsp;&nbsp;L ⊆ Σ*</div>
+        <p>An alphabet is a finite set of symbols, a string is a finite sequence of them, and a language is any set of strings. ⊥ stands for every character outside the URL character set.</p>
+        <div class="use"><b>In the project:</b> the URL is the input string w. Each pattern, e.g. “contains login”, is a language L<sub>login</sub> = Σ*·login·Σ*.</div>
+      </article>
+      <article class="tcard">
+        <h3>Regular expressions</h3>
+        <div class="formula">r ::= a | ε | r₁r₂ | r₁ + r₂ | r*<br>L(.*login.*) = Σ* {login} Σ*</div>
+        <p>Regular expressions denote languages built from symbols with union, concatenation and Kleene star. Our parser also accepts the shorthands <code>+</code>, <code>?</code>, <code>[0-9]</code> and <code>.</code> (any symbol of Σ).</p>
+        <div class="use"><b>In the project:</b> all 13 patterns, from <code>.*@.*</code> to <code>[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+</code>, are written as regular expressions.</div>
+      </article>
+      <article class="tcard">
+        <h3>Deterministic finite automaton</h3>
+        <div class="formula">M = (Q, Σ, δ, q₀, F)<br>δ : Q × Σ → Q</div>
+        <p>A finite set of states, an alphabet, a total transition function, a start state and a set of accepting states. Exactly one move is defined for every state and symbol, so a run never branches.</p>
+        <div class="use"><b>In the project:</b> the <code>DFA</code> class stores Q, the symbol classes of Σ, a δ table, q₀ and F, and a run is a table lookup per character.</div>
+      </article>
+      <article class="tcard">
+        <h3>Extended transition function</h3>
+        <div class="formula">δ̂(q, ε) = q<br>δ̂(q, wa) = δ(δ̂(q, w), a)<br>L(M) = { w ∈ Σ* | δ̂(q₀, w) ∈ F }</div>
+        <p>δ̂ applies δ along a whole string. A string is accepted when the state reached after the last symbol is accepting.</p>
+        <div class="use"><b>In the project:</b> <code>DFA.run()</code> computes δ̂ and returns every intermediate state. That trace is what the simulator animates.</div>
+      </article>
+      <article class="tcard">
+        <h3>Nondeterministic finite automaton (NFA)</h3>
+        <div class="formula">N = (Q, Σ, δ, q₀, F)<br>δ : Q × (Σ ∪ {ε}) → 𝒫(Q)</div>
+        <p>An NFA may have several moves, or none, for the same symbol, and may move on ε without reading input. It accepts if some path ends in F. NFAs are easy to build from regular expressions.</p>
+        <div class="use"><b>In the project:</b> each regular expression is first converted into an NFA with at most 2|r| states (18 states for <code>.*login.*</code>).</div>
+      </article>
+      <article class="tcard">
+        <h3>Kleene's theorem</h3>
+        <div class="formula">regular expressions ≡ NFA ≡ DFA</div>
+        <p>A language is denoted by a regular expression if and only if some finite automaton accepts it. This is why a pattern written as a regex can always be checked by a DFA.</p>
+        <div class="use"><b>In the project:</b> it guarantees that every pattern has a DFA. We verified each compiled DFA against Python's <code>re</code> on 20,000 random strings plus every short string.</div>
+      </article>
+      <article class="tcard">
+        <h3>Subset construction (Rabin–Scott)</h3>
+        <div class="formula">Q<sub>D</sub> ⊆ 𝒫(Q<sub>N</sub>),&nbsp; q<sub>D0</sub> = ε-closure(q₀)<br>δ<sub>D</sub>(S, a) = ε-closure(⋃<sub>q∈S</sub> δ<sub>N</sub>(q, a))</div>
+        <p>Each DFA state is a set of NFA states. In the worst case this needs 2<sup>|Q<sub>N</sub>|</sup> states, but only reachable subsets are generated, and the empty set becomes the dead state.</p>
+        <div class="use"><b>In the project:</b> 18 NFA states for <code>login</code> produce only 13 reachable subsets, not 2¹⁸ = 262,144.</div>
+      </article>
+      <article class="tcard">
+        <h3>Myhill–Nerode and minimisation</h3>
+        <div class="formula">x ≡<sub>L</sub> y ⇔ ∀z: xz ∈ L ⇔ yz ∈ L<br>|Q<sub>min</sub>| = index of ≡<sub>L</sub></div>
+        <p>A language is regular if and only if ≡<sub>L</sub> has finitely many classes, and the minimal DFA has exactly one state per class. It is unique up to renaming of states.</p>
+        <div class="use"><b>In the project:</b> Moore's refinement shrinks the <code>login</code> DFA from 13 to 6 states, q₀…q₅, which is the diagram drawn in our proposal.</div>
+      </article>
+      <article class="tcard">
+        <h3>Closure properties</h3>
+        <div class="formula">L₁ ∪ L₂,&nbsp; L₁ ∩ L₂,&nbsp; L̄,&nbsp; L₁L₂,&nbsp; L* are regular</div>
+        <p>Regular languages are closed under the Boolean operations, concatenation and star. Union can be realised as a product automaton or by compiling the union regex.</p>
+        <div class="use"><b>In the project:</b> the nine keyword DFAs (64 states in total) merge into one 44-state DFA for the union. We keep them separate so each verdict can be reported and weighted on its own.</div>
+      </article>
+      <article class="tcard">
+        <h3>Pumping lemma: what DFAs cannot do</h3>
+        <div class="formula">∃p ∀w ∈ L, |w| ≥ p: w = xyz,<br>|xy| ≤ p, |y| ≥ 1, ∀i ≥ 0: xyⁱz ∈ L</div>
+        <p>Some languages are not regular. For example {aⁿbⁿ}, balanced brackets, and “the link text equals the real host” all need unbounded memory.</p>
+        <div class="use"><b>In the project:</b> this is why counts and comparisons (URL length, number of labels) run as structural rules in ordinary code, outside the automata.</div>
+      </article>
+    </div>
+
+    <div class="map-table-wrap">
+      <table class="map">
+        <thead><tr><th>MOC concept</th><th>Symbol</th><th>Where it appears in the detector</th></tr></thead>
+        <tbody>
+          <tr><td>Alphabet</td><td>Σ</td><td>59 URL characters (after lower-casing) plus ⊥, compressed into symbol classes per pattern</td></tr>
+          <tr><td>String</td><td>w ∈ Σ*</td><td>The normalised URL, or its host or path component</td></tr>
+          <tr><td>Language</td><td>L ⊆ Σ*</td><td>Set of strings that contain a suspicious pattern</td></tr>
+          <tr><td>Regular expression</td><td>r</td><td><code>.*login.*</code>, <code>.*@.*</code>, <code>[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+</code>, …</td></tr>
+          <tr><td>NFA</td><td>N</td><td>Built from each regular expression, one per pattern</td></tr>
+          <tr><td>Subset construction</td><td>𝒫(Q<sub>N</sub>)</td><td>Converts every NFA into a complete DFA</td></tr>
+          <tr><td>DFA</td><td>(Q, Σ, δ, q₀, F)</td><td>The engine that reads the URL, one symbol per step</td></tr>
+          <tr><td>States</td><td>Q</td><td>How much of the pattern has been matched so far (q₂ = “lo” seen)</td></tr>
+          <tr><td>Transition function</td><td>δ</td><td>Table lookup δ[q][class(c)], including fallback moves after a partial match</td></tr>
+          <tr><td>Start state</td><td>q₀</td><td>Nothing of the pattern has been matched yet</td></tr>
+          <tr><td>Accepting states</td><td>F</td><td>Pattern found. For Σ*wΣ* the accepting state loops on all of Σ</td></tr>
+          <tr><td>Dead state</td><td>q<sub>d</sub></td><td>The pattern can no longer match (IPv4 DFA after reading a letter)</td></tr>
+          <tr><td>Minimisation</td><td>≡<sub>L</sub></td><td>Moore's partition refinement gives the smallest DFA for each pattern</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="band" id="architecture">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Proposed system</span>
+      <h2>Four modules, one pipeline.</h2>
+      <p>The automata are only responsible for pattern recognition. Parsing, counting rules and scoring are separate modules, so the detector is not presented as a single formal language.</p>
+    </div>
+    <div class="arch">
+      <div class="mod"><span class="idx">MODULE 1</span><h3>URL parser</h3><p>Normalises case and splits the URL into scheme, userinfo, host, subdomain, domain, port, path, query and fragment.</p><code>parse_url()</code></div>
+      <div class="mod"><span class="idx">MODULE 2</span><h3>MOC automata engine</h3><p>Compiles each regex through regex → NFA → DFA → minimal DFA and runs the resulting DFA on its URL component.</p><code>compile_regex(), DFA.run()</code></div>
+      <div class="mod"><span class="idx">MODULE 3</span><h3>Feature detector</h3><p>Collects DFA verdicts, applies the structural rules and adds up the weights into a score and a class.</p><code>analyse(), classify()</code></div>
+      <div class="mod"><span class="idx">MODULE 4</span><h3>Web interface</h3><p>This page. A Flask API serves the Python engine, and a JavaScript port runs the same automata in the browser.</p><code>app.py, index.html</code></div>
+    </div>
+    <div class="flowline" aria-label="Processing pipeline">
+      <span class="s">User URL</span>→<span class="s">Preprocess</span>→<span class="s">Extract components</span>→<span class="s">13 DFAs + 3 rules</span>→<span class="s">Pattern results</span>→<span class="s">Risk score</span>→<span class="s">Low / Suspicious / High</span>
+    </div>
+    <div class="two">
+      <div class="panel">
+        <h3>Risk-scoring weights</h3>
+        <table class="data" id="weights"></table>
+      </div>
+      <div class="panel">
+        <h3>Patterns and the component each DFA reads</h3>
+        <table class="data" id="pattern-table"></table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band alt" id="results">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Implementation and results</span>
+      <h2>What the experiments show.</h2>
+      <p>All figures below come from <code>evaluate.py</code> running the Python engine. The URL set is a small illustrative set written by the team, so it shows how the detector behaves rather than estimating real-world accuracy.</p>
+    </div>
+    <div class="kpis" id="kpis"></div>
+    <div class="panel">
+      <h3>Automaton size at each stage of the pipeline</h3>
+      <p class="note" style="margin:6px 0 14px">Number of states. The subset construction never came close to its 2<sup>n</sup> worst case, and minimisation roughly halved every keyword DFA.</p>
+      <div class="legend"><span><i style="background:var(--c1)"></i>NFA</span><span><i style="background:var(--c2)"></i>Subset-construction DFA</span><span><i style="background:var(--c3)"></i>Minimal DFA</span></div>
+      <div class="chart-wrap" id="size-chart"></div>
+    </div>
+    <div class="two">
+      <div class="panel">
+        <h3>Correctness against Python <code>re</code></h3>
+        <p class="note" style="margin:6px 0 12px">Each minimal DFA and <code>re.fullmatch</code> judged the same strings: 20,000 random strings, plus every string up to length L built from one character per symbol class.</p>
+        <div style="overflow-x:auto"><table class="data" id="eq-table"></table></div>
+      </div>
+      <div class="panel">
+        <h3>Linear-time scanning</h3>
+        <p class="note" style="margin:6px 0 12px">A DFA does one table lookup per character, so time grows linearly with input length: O(n), independent of the pattern.</p>
+        <div class="chart-wrap" id="time-chart"></div>
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:12px">
+          <button class="btn small" id="bench-btn">Benchmark in this browser</button>
+          <span class="note" id="bench-out"></span>
+        </div>
+      </div>
+    </div>
+    <div class="panel" style="margin-top:20px">
+      <div style="display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;align-items:flex-start">
+        <div style="min-width:0;flex:1 1 300px">
+          <h3>Illustrative URL set</h3>
+          <p class="note" style="margin:6px 0 0;max-width:70ch">Phishing-style URLs use invented or reserved domains. Click a row to open it in the analyzer. A URL counts as flagged when it is classed Suspicious or High Risk.</p>
+        </div>
+        <div class="cm" id="cm"></div>
+      </div>
+      <div class="ex-table-wrap" style="margin-top:16px"><table class="ex" id="ex-table"></table></div>
+    </div>
+  </div>
+</section>
+
+<section class="band" id="discussion">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Discussion</span>
+      <h2>What the detector can and cannot tell you.</h2>
+    </div>
+    <div class="limits">
+      <div class="panel">
+        <h3>Limitations</h3>
+        <ul>
+          <li><strong>Keywords are evidence, not proof.</strong> <code>accounts.google.com/signin</code> scores 2 and is flagged although it is legitimate.</li>
+          <li><strong>Clean-looking URLs pass.</strong> A shortened link such as <code>bit.ly/3xYzAbc</code> contains no pattern and scores 0.</li>
+          <li><strong>No memory beyond finite states.</strong> Comparing displayed text with the real host, or counting without a bound, is not regular.</li>
+          <li><strong>Thresholds are project rules.</strong> The weights and the 0–1 / 2–3 / ≥ 4 bands are choices we made, not properties of automata.</li>
+        </ul>
+      </div>
+      <div class="panel">
+        <h3>Future scope</h3>
+        <ul>
+          <li><strong>Trusted-domain allowlist</strong> and percent-decoding before the automata run.</li>
+          <li><strong>One product DFA</strong> whose accepting states record which keywords were found, in the style of Aho–Corasick.</li>
+          <li><strong>Homoglyph patterns</strong> such as <code>paypa1</code> or <code>rn</code> written in place of <code>m</code>, as further regular languages.</li>
+          <li><strong>Threat-intelligence feeds</strong> and a comparison with machine-learning detectors on a public dataset.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <div>
+      <h4>PhishDFA</h4>
+      <p>Rule-Based Phishing URL Detector Using Finite Automata. Mini project for Models of Computation (Theory of Computation). The risk score is an educational heuristic, not a security verdict.</p>
+    </div>
+    <div>
+      <h4>Team</h4>
+      <div class="team-row">
+        <div><span>Nilay Sengupta</span><span>25BYB0255</span></div>
+        <div><span>Adwit Agarwal</span><span>25BYB0116</span></div>
+      </div>
+    </div>
+    <div>
+      <h4>References</h4>
+      <ol>
+        <li>Hopcroft, Motwani, Ullman. <em>Introduction to Automata Theory, Languages, and Computation.</em></li>
+        <li>Sipser. <em>Introduction to the Theory of Computation.</em></li>
+        <li>Aho, Lam, Sethi, Ullman. <em>Compilers: Principles, Techniques, and Tools</em>, ch. 3.</li>
+      </ol>
+    </div>
+  </div>
+</footer>
+
+<script>
+/* ======================================================================= *
+ *  Automata engine: a line-for-line port of phishing_detector/automata.py
+ * ======================================================================= */
+const URL_CHARS = "abcdefghijklmnopqrstuvwxyz0123456789-._~:/?#[]@!$&'()*+,;=%";
+const OTHER = "⊥";
+const SIGMA = [...URL_CHARS, OTHER];
+const SIGMA_SET = new Set(SIGMA);
+const DIGITS = "0123456789";
+const LOWER = "abcdefghijklmnopqrstuvwxyz";
+const norm = (ch) => { ch = ch.toLowerCase(); return SIGMA_SET.has(ch) ? ch : OTHER; };
+const orderKey = (c) => { const i = URL_CHARS.indexOf(c); return i < 0 ? URL_CHARS.length : i; };
+
+class RegexError extends Error {}
+
+class Parser {
+  constructor(src) { this.src = src; this.i = 0; }
+  peek() { return this.i < this.src.length ? this.src[this.i] : null; }
+  take() { const c = this.peek(); if (c === null) throw new RegexError("unexpected end of expression"); this.i++; return c; }
+  parse() { const n = this.expr(); if (this.peek() !== null) throw new RegexError(`unexpected '${this.peek()}' at position ${this.i}`); return n; }
+  expr() { const t = [this.term()]; while (this.peek() === "|") { this.take(); t.push(this.term()); } return t.length === 1 ? t[0] : { kind: "alt", kids: t }; }
+  term() {
+    const f = [];
+    while (this.peek() !== null && !"|)".includes(this.peek())) f.push(this.factor());
+    if (!f.length) return { kind: "eps", kids: [] };
+    return f.length === 1 ? f[0] : { kind: "cat", kids: f };
+  }
+  factor() {
+    let n = this.atom();
+    while (["*", "+", "?"].includes(this.peek())) { const op = this.take(); n = { kind: { "*": "star", "+": "plus", "?": "opt" }[op], kids: [n] }; }
+    return n;
+  }
+  atom() {
+    const c = this.take();
+    if (c === "(") { const n = this.expr(); if (this.take() !== ")") throw new RegexError("missing ')'"); return n; }
+    if (c === "[") return { kind: "set", chars: this.charClass(), kids: [] };
+    if (c === ".") return { kind: "set", chars: new Set(SIGMA), kids: [] };
+    if (c === "\\") return { kind: "set", chars: this.escape(this.take()), kids: [] };
+    if (")]*+?|".includes(c)) throw new RegexError(`unexpected '${c}' at position ${this.i - 1}`);
+    return { kind: "set", chars: new Set([norm(c)]), kids: [] };
+  }
+  escape(c) {
+    if (c === "d") return new Set(DIGITS);
+    if (c === "w") return new Set(LOWER + DIGITS + "_");
+    return new Set([norm(c)]);
+  }
+  charClass() {
+    let negate = false;
+    if (this.peek() === "^") { this.take(); negate = true; }
+    const chars = new Set(); let first = true;
+    while (true) {
+      const c = this.take();
+      if (c === "]" && !first) break;
+      first = false;
+      if (c === "\\") { this.escape(this.take()).forEach((x) => chars.add(x)); continue; }
+      if (this.peek() === "-" && this.i + 1 < this.src.length && this.src[this.i + 1] !== "]") {
+        this.take(); const hi = this.take();
+        for (let k = c.charCodeAt(0); k <= hi.charCodeAt(0); k++) chars.add(norm(String.fromCharCode(k)));
+      } else chars.add(norm(c));
+    }
+    for (const x of [...chars]) if (!SIGMA_SET.has(x)) chars.delete(x);
+    return negate ? new Set(SIGMA.filter((x) => !chars.has(x))) : chars;
+  }
+}
+
+function collectSets(n, out) { if (n.kind === "set") out.push(n.chars); n.kids.forEach((k) => collectSets(k, out)); }
+
+function symbolClasses(tree) {
+  let blocks = [SIGMA.slice()];
+  const sets = []; collectSets(tree, sets);
+  for (const s of sets) {
+    const nxt = [];
+    for (const b of blocks) {
+      const inside = b.filter((c) => s.has(c)), outside = b.filter((c) => !s.has(c));
+      if (inside.length) nxt.push(inside);
+      if (outside.length) nxt.push(outside);
+    }
+    blocks = nxt;
+  }
+  const key = (b) => [b.includes(OTHER) ? 1 : 0, Math.min(...b.map(orderKey))];
+  blocks.sort((a, b) => { const ka = key(a), kb = key(b); return ka[0] - kb[0] || ka[1] - kb[1]; });
+  return blocks;
+}
+
+function sameSet(arr, str) { return arr.length === str.length && [...str].every((c) => arr.includes(c)); }
+function classLabel(chars) {
+  if (chars.length === 1) return chars[0] === OTHER ? "other" : chars[0];
+  if (chars.includes(OTHER)) return "other";
+  if (sameSet(chars, DIGITS)) return "0-9";
+  if (sameSet(chars, LOWER)) return "a-z";
+  const o = chars.slice().sort((a, b) => orderKey(a) - orderKey(b));
+  return o.length <= 6 ? "[" + o.join("") + "]" : "[" + o.slice(0, 5).join("") + "…]";
+}
+
+function regexToNFA(tree, classes) {
+  const edges = []; let counter = 0;
+  const neu = () => counter++;
+  function build(n) {
+    if (n.kind === "eps") { const s = neu(), f = neu(); edges.push([s, null, f]); return [s, f]; }
+    if (n.kind === "set") {
+      const s = neu(), f = neu();
+      classes.forEach((cls, idx) => { if (cls.every((c) => n.chars.has(c))) edges.push([s, idx, f]); });
+      return [s, f];
+    }
+    if (n.kind === "cat") {
+      let [s, f] = build(n.kids[0]);
+      for (const k of n.kids.slice(1)) { const [s2, f2] = build(k); edges.push([f, null, s2]); f = f2; }
+      return [s, f];
+    }
+    if (n.kind === "alt") {
+      const s = neu(), f = neu();
+      for (const k of n.kids) { const [s2, f2] = build(k); edges.push([s, null, s2]); edges.push([f2, null, f]); }
+      return [s, f];
+    }
+    const s = neu(), f = neu();
+    const [s2, f2] = build(n.kids[0]);
+    edges.push([s, null, s2]); edges.push([f2, null, f]);
+    if (n.kind === "star" || n.kind === "opt") edges.push([s, null, f]);
+    if (n.kind === "star" || n.kind === "plus") edges.push([f2, null, s2]);
+    return [s, f];
+  }
+  const [s, f] = build(tree);
+  const eps = new Map(), sym = new Map();
+  for (const [a, x, b] of edges) {
+    if (x === null) { if (!eps.has(a)) eps.set(a, []); eps.get(a).push(b); }
+    else { const k = a + ":" + x; if (!sym.has(k)) sym.set(k, new Set()); sym.get(k).add(b); }
+  }
+  return { n: counter, start: s, accept: f, edges, classes, eps, sym, nEps: edges.filter((e) => e[1] === null).length };
+}
+
+function epsClosure(nfa, states) {
+  const seen = new Set(states), stack = [...states];
+  while (stack.length) { const s = stack.pop(); for (const t of nfa.eps.get(s) || []) if (!seen.has(t)) { seen.add(t); stack.push(t); } }
+  return seen;
+}
+function move(nfa, S, x) { const out = new Set(); for (const s of S) for (const t of nfa.sym.get(s + ":" + x) || []) out.add(t); return out; }
+const setKey = (S) => [...S].sort((a, b) => a - b).join(",");
+
+function subsetConstruction(nfa) {
+  const start = epsClosure(nfa, [nfa.start]);
+  const index = new Map([[setKey(start), 0]]), order = [start], queue = [start], targets = [];
+  while (queue.length) {
+    const S = queue.shift(), tl = [];
+    for (let x = 0; x < nfa.classes.length; x++) {
+      const T = epsClosure(nfa, move(nfa, S, x)), k = setKey(T);
+      if (!index.has(k)) { index.set(k, order.length); order.push(T); queue.push(T); }
+      tl.push(index.get(k));
+    }
+    targets[index.get(setKey(S))] = tl;
+  }
+  const rows = order.map((S, i) => ({ index: i, nfa: [...S].sort((a, b) => a - b), accepting: S.has(nfa.accept), targets: targets[i] }));
+  const dfa = { states: order.map((_, i) => "D" + i), classes: nfa.classes, delta: targets, start: 0, accepting: new Set(rows.filter((r) => r.accepting).map((r) => r.index)) };
+  return { dfa, rows };
+}
+
+function deadStates(m) {
+  const d = new Set();
+  m.delta.forEach((row, q) => { if (!m.accepting.has(q) && row.every((t) => t === q)) d.add(q); });
+  return d;
+}
+
+function minimise(dfa) {
+  const n = dfa.states.length;
+  let block = dfa.states.map((_, q) => (dfa.accepting.has(q) ? 1 : 0));
+  const rounds = [];
+  const snapshot = () => {
+    const g = new Map();
+    block.forEach((b, q) => { if (!g.has(b)) g.set(b, []); g.get(b).push(q); });
+    return [...g.values()].sort((a, b) => a[0] - b[0]);
+  };
+  rounds.push(snapshot());
+  while (true) {
+    const sig = new Map(), nb = [];
+    for (let q = 0; q < n; q++) {
+      const k = block[q] + "|" + dfa.delta[q].map((t) => block[t]).join(",");
+      if (!sig.has(k)) sig.set(k, sig.size);
+      nb.push(sig.get(k));
+    }
+    const stable = new Set(nb).size === new Set(block).size;
+    block = nb;
+    if (stable) break;
+    rounds.push(snapshot());
+  }
+  const rep = new Map(); block.forEach((b, q) => { if (!rep.has(b)) rep.set(b, q); });
+  const sb = block[dfa.start], order = [sb], seen = new Set([sb]), queue = [sb];
+  while (queue.length) {
+    const b = queue.shift();
+    for (const t of dfa.delta[rep.get(b)]) { const tb = block[t]; if (!seen.has(tb)) { seen.add(tb); order.push(tb); queue.push(tb); } }
+  }
+  const pos = new Map(order.map((b, i) => [b, i]));
+  let delta = order.map((b) => dfa.delta[rep.get(b)].map((t) => pos.get(block[t])));
+  let acc = new Set([...dfa.accepting].filter((q) => pos.has(block[q])).map((q) => pos.get(block[q])));
+  const m = { delta, accepting: acc };
+  const dead = deadStates(m);
+  const live = order.map((_, i) => i).filter((q) => !dead.has(q));
+  const fin = [...live, ...[...dead].sort((a, b) => a - b)];
+  const remap = new Map(fin.map((old, i) => [old, i]));
+  delta = fin.map((old) => m.delta[old].map((t) => remap.get(t)));
+  const names = [...live.map((_, i) => "q" + i), ...[...dead].map(() => "qd")];
+  const minimal = { states: names, classes: dfa.classes, delta, start: 0, accepting: new Set([...acc].map((q) => remap.get(q))) };
+  return { minimal, rounds };
+}
+
+function symbolOf(m, ch) { ch = norm(ch); for (let i = 0; i < m.classes.length; i++) if (m.classes[i].includes(ch)) return i; throw new Error(ch); }
+function runDFA(m, text) { let q = m.start; const tr = [q]; for (const ch of text) { q = m.delta[q][symbolOf(m, ch)]; tr.push(q); } return tr; }
+
+const cache = new Map();
+function compileRegex(regex) {
+  if (cache.has(regex)) return cache.get(regex);
+  const tree = new Parser(regex).parse();
+  const classes = symbolClasses(tree);
+  const nfa = regexToNFA(tree, classes);
+  const { dfa, rows } = subsetConstruction(nfa);
+  const { minimal, rounds } = minimise(dfa);
+  const out = { regex, classes, labels: classes.map(classLabel), nfa, subset: dfa, rows, min: minimal, rounds };
+  cache.set(regex, out);
+  return out;
+}
+
+/* ======================================================================= *
+ *  Detector: port of phishing_detector/detector.py
+ * ======================================================================= */
+const KEYWORDS = ["login", "signin", "verify", "account", "password", "secure", "update", "bank", "confirm"];
+const PATTERNS = [
+  ...KEYWORDS.map((k) => ({ id: "kw_" + k, title: `Keyword “${k}”`, regex: `.*${k}.*`, scope: "url", weight: 1, category: "keyword" })),
+  { id: "at_symbol", title: "“@” symbol in URL", regex: ".*@.*", scope: "url", weight: 2, category: "structure" },
+  { id: "ipv4_host", title: "IPv4 address as hostname", regex: "[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+", scope: "host", weight: 2, category: "structure" },
+  { id: "punycode", title: "Punycode host (xn--)", regex: ".*xn--.*", scope: "host", weight: 1, category: "structure" },
+  { id: "dbl_slash", title: "“//” redirect inside path", regex: ".*//.*", scope: "path", weight: 1, category: "structure" },
+];
+const LONG_URL = 75, MAX_HOST_LABELS = 3, MAX_SPECIAL = 6, SPECIAL = new Set("-_=&%~");
+
+function parseURL(raw) {
+  const url = raw.trim(), normd = url.toLowerCase();
+  let rest = normd, scheme = "";
+  const si = rest.indexOf("://");
+  if (si !== -1) { scheme = rest.slice(0, si); rest = rest.slice(si + 3); }
+  let cut = rest.length;
+  for (const sep of "/?#") { const i = rest.indexOf(sep); if (i !== -1) cut = Math.min(cut, i); }
+  let authority = rest.slice(0, cut), tail = rest.slice(cut), userinfo = "";
+  const at = authority.lastIndexOf("@");
+  if (at !== -1) { userinfo = authority.slice(0, at); authority = authority.slice(at + 1); }
+  let host = authority, port = "";
+  const ci = authority.lastIndexOf(":");
+  if (ci !== -1) { host = authority.slice(0, ci); port = authority.slice(ci + 1); }
+  let fragment = "", query = "";
+  const hi = tail.indexOf("#"); if (hi !== -1) { fragment = tail.slice(hi + 1); tail = tail.slice(0, hi); }
+  const qi = tail.indexOf("?"); if (qi !== -1) { query = tail.slice(qi + 1); tail = tail.slice(0, qi); }
+  const labels = host.split(".").filter(Boolean);
+  return { raw: url, normalised: normd, scheme, userinfo, host, port, path: tail, query, fragment, labels,
+    domain: labels.slice(-2).join("."), subdomain: labels.slice(0, -2).join(".") };
+}
+
+const classify = (s) => (s <= 1 ? "Low Risk" : s <= 3 ? "Suspicious" : "High Risk");
+const scopeText = (p, scope) => (scope === "host" ? p.host : scope === "path" ? p.path : p.normalised);
+
+function analyse(raw) {
+  const parts = parseURL(raw), findings = [];
+  for (const p of PATTERNS) {
+    const text = scopeText(parts, p.scope), c = compileRegex(p.regex), m = c.min;
+    const trace = runDFA(m, text), hit = m.accepting.has(trace[trace.length - 1]);
+    const firstAcc = trace.findIndex((q) => m.accepting.has(q));
+    findings.push({ ...p, kind: "dfa", input: text, trace, hit, firstAcc, finalState: m.states[trace[trace.length - 1]], score: hit ? p.weight : 0 });
+  }
+  const nSpecial = [...parts.normalised].filter((c) => SPECIAL.has(c)).length;
+  const hostIsIP = findings.some((f) => f.id === "ipv4_host" && f.hit);
+  const rules = [
+    ["long_url", `URL longer than ${LONG_URL} characters`, parts.normalised.length > LONG_URL, `${parts.normalised.length} characters`],
+    ["many_subdomains", `More than ${MAX_HOST_LABELS} hostname labels`, parts.labels.length > MAX_HOST_LABELS && !hostIsIP, hostIsIP ? "IP host, not counted" : `${parts.labels.length} labels`],
+    ["special_chars", `More than ${MAX_SPECIAL} special characters (- _ = & % ~)`, nSpecial > MAX_SPECIAL, `${nSpecial} found`],
+  ];
+  for (const [id, title, hit, detail] of rules) findings.push({ id, title, kind: "rule", hit, detail, weight: 1, score: hit ? 1 : 0 });
+  const score = findings.reduce((a, f) => a + f.score, 0);
+  return { parts, findings, score, classification: classify(score) };
+}
+
+/* ======================================================================= *
+ *  Diagram renderer (inline SVG)
+ * ======================================================================= */
+const SVGNS = "http://www.w3.org/2000/svg";
+const el = (tag, attrs = {}, parent) => {
+  const e = document.createElementNS(SVGNS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(e);
+  return e;
+};
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+function edgeLabel(idxs, labels) {
+  const n = labels.length;
+  if (idxs.length === n) return "Σ";
+  if (n > 2 && idxs.length > n / 2) return "Σ∖{" + labels.filter((_, i) => !idxs.includes(i)).join(",") + "}";
+  return idxs.map((i) => labels[i]).join(", ");
+}
+
+function graphFromDFA(m, labels, showDead) {
+  const dead = deadStates(m);
+  const hidden = showDead ? new Set() : dead;
+  const groups = new Map();
+  m.delta.forEach((row, q) => {
+    if (hidden.has(q)) return;
+    row.forEach((t, x) => { if (hidden.has(t)) return; const k = q + ">" + t; if (!groups.has(k)) groups.set(k, []); groups.get(k).push(x); });
+  });
+  const edges = [...groups].map(([k, xs]) => { const [a, b] = k.split(">").map(Number); return { a, b, syms: xs, label: edgeLabel(xs, labels) }; });
+  const nodes = m.states.map((name, q) => ({ id: q, name, acc: m.accepting.has(q), dead: dead.has(q), hidden: hidden.has(q) }));
+  return { nodes, edges, start: m.start, hiddenDead: !showDead && dead.size > 0 };
+}
+
+function graphFromNFA(nfa, labels) {
+  const groups = new Map();
+  for (const [a, x, b] of nfa.edges) { const k = a + ">" + b; if (!groups.has(k)) groups.set(k, []); groups.get(k).push(x); }
+  const edges = [...groups].map(([k, xs]) => {
+    const [a, b] = k.split(">").map(Number);
+    const eps = xs.includes(null);
+    const syms = xs.filter((x) => x !== null);
+    return { a, b, eps, label: eps ? "ε" : edgeLabel(syms, labels), syms };
+  });
+  const nodes = Array.from({ length: nfa.n }, (_, q) => ({ id: q, name: String(q), acc: q === nfa.accept }));
+  return { nodes, edges, start: nfa.start };
+}
+
+function layout(g, gapX) {
+  const layer = new Map([[g.start, 0]]), order = [g.start], queue = [g.start];
+  const adj = new Map();
+  for (const e of g.edges) { if (!adj.has(e.a)) adj.set(e.a, []); adj.get(e.a).push(e.b); }
+  while (queue.length) {
+    const q = queue.shift();
+    for (const t of adj.get(q) || []) if (!layer.has(t)) { layer.set(t, layer.get(q) + 1); order.push(t); queue.push(t); }
+  }
+  let maxL = Math.max(...layer.values());
+  for (const nd of g.nodes) if (!nd.hidden && !layer.has(nd.id)) { layer.set(nd.id, ++maxL); order.push(nd.id); }
+  const byLayer = new Map();
+  for (const q of order) { const L = layer.get(q); if (!byLayer.has(L)) byLayer.set(L, []); byLayer.get(L).push(q); }
+  const pos = new Map();
+  for (const [L, qs] of byLayer) qs.forEach((q, i) => pos.set(q, { x: 60 + L * gapX, y: (i - (qs.length - 1) / 2) * 96, L }));
+  return pos;
+}
+
+function renderGraph(container, g, opts = {}) {
+  const R = 21, gapX = opts.gapX || 128;
+  const pos = layout(g, gapX);
+  const svg = document.createElementNS(SVGNS, "svg");
+  const uid = Math.random().toString(36).slice(2, 8);
+  const defs = el("defs", {}, svg);
+  for (const [nm, cls] of [["d", "mk-default"], ["a", "mk-active"]]) {
+    const mk = el("marker", { id: `ar-${nm}-${uid}`, viewBox: "0 0 10 10", refX: "9", refY: "5", markerWidth: "7", markerHeight: "7", orient: "auto-start-reverse" }, defs);
+    el("path", { d: "M0,0 L10,5 L0,10 z", class: cls }, mk);
+  }
+  const edgeLayer = el("g", {}, svg), nodeLayer = el("g", {}, svg);
+  const pairs = new Set(g.edges.map((e) => e.a + ">" + e.b));
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  const grow = (x, y) => { minX = Math.min(minX, x); maxX = Math.max(maxX, x); minY = Math.min(minY, y); maxY = Math.max(maxY, y); };
+  const edgeEls = new Map();
+
+  for (const e of g.edges) {
+    const p1 = pos.get(e.a), p2 = pos.get(e.b);
+    if (!p1 || !p2) continue;
+    const ge = el("g", { class: "edge" + (e.eps ? " eps" : "") }, edgeLayer);
+    let d, lx, ly;
+    if (e.a === e.b) {
+      d = `M${p1.x - 9},${p1.y - R + 2} C${p1.x - 30},${p1.y - R - 44} ${p1.x + 30},${p1.y - R - 44} ${p1.x + 9},${p1.y - R + 2}`;
+      lx = p1.x; ly = p1.y - R - 40;
+      grow(p1.x - 40, ly - 14); grow(p1.x + 40, ly);
+    } else {
+      const dx = p2.x - p1.x, dy = p2.y - p1.y, len = Math.hypot(dx, dy) || 1;
+      const straight = p2.L === p1.L + 1 && !pairs.has(e.b + ">" + e.a) || (p2.L === p1.L + 1 && Math.abs(dy) > 0);
+      if (straight) {
+        const ux = dx / len, uy = dy / len;
+        const sx = p1.x + ux * R, sy = p1.y + uy * R, tx = p2.x - ux * (R + 2), ty = p2.y - uy * (R + 2);
+        d = `M${sx},${sy} L${tx},${ty}`;
+        lx = (sx + tx) / 2 - uy * 10; ly = (sy + ty) / 2 - 7 + (uy * 0);
+      } else {
+        const nx = -dy / len, ny = dx / len;
+        const back = p2.L <= p1.L;
+        const mag = (back ? 22 : 30) + 0.26 * len;
+        const cx = (p1.x + p2.x) / 2 - nx * mag, cy = (p1.y + p2.y) / 2 - ny * mag;
+        const a1 = Math.atan2(cy - p1.y, cx - p1.x), a2 = Math.atan2(p2.y - cy, p2.x - cx);
+        const sx = p1.x + Math.cos(a1) * R, sy = p1.y + Math.sin(a1) * R;
+        const tx = p2.x - Math.cos(a2) * (R + 2), ty = p2.y - Math.sin(a2) * (R + 2);
+        d = `M${sx},${sy} Q${cx},${cy} ${tx},${ty}`;
+        lx = 0.25 * sx + 0.5 * cx + 0.25 * tx; ly = 0.25 * sy + 0.5 * cy + 0.25 * ty;
+        ly += (cy > (p1.y + p2.y) / 2 ? 14 : -6);
+        grow(cx, cy); grow(lx, ly + 6);
+        if (back && !e.eps && opts.faintBack) ge.classList.add("faint");
+      }
+    }
+    el("path", { d, "marker-end": `url(#ar-d-${uid})` }, ge);
+    const t = el("text", { x: lx, y: ly }, ge); t.textContent = e.label;
+    grow(lx - e.label.length * 3.6, ly - 12); grow(lx + e.label.length * 3.6, ly + 4);
+    edgeEls.set(e.a + ">" + e.b, ge);
+  }
+
+  const nodeEls = new Map();
+  for (const nd of g.nodes) {
+    const p = pos.get(nd.id);
+    if (!p || nd.hidden) continue;
+    const gn = el("g", { class: "node" + (nd.acc ? " acc" : "") + (nd.dead ? " dead" : ""), transform: `translate(${p.x},${p.y})` }, nodeLayer);
+    el("circle", { r: R + 9, class: "halo" }, gn);
+    el("circle", { r: R, class: "body" }, gn);
+    if (nd.acc) el("circle", { r: R - 4.5, class: "ring" }, gn);
+    const t = el("text", {}, gn); t.textContent = nd.name;
+    nodeEls.set(nd.id, gn);
+    grow(p.x - R - 10, p.y - R - 10); grow(p.x + R + 10, p.y + R + 10);
+  }
+  const sp = pos.get(g.start);
+  el("path", { d: `M${sp.x - R - 34},${sp.y} L${sp.x - R - 3},${sp.y}`, class: "start-arrow", "marker-end": `url(#ar-d-${uid})` }, edgeLayer);
+  grow(sp.x - R - 40, sp.y);
+
+  const pad = 10;
+  const w = maxX - minX + pad * 2, h = maxY - minY + pad * 2;
+  svg.setAttribute("viewBox", `${minX - pad} ${minY - pad} ${w} ${h}`);
+  if (opts.fit) { svg.setAttribute("width", "100%"); svg.style.maxWidth = Math.round(w) + "px"; svg.style.height = "auto"; }
+  else { svg.setAttribute("width", Math.round(w)); svg.setAttribute("height", Math.round(h)); }
+  svg.setAttribute("role", "img");
+  svg.setAttribute("aria-label", opts.label || "State diagram");
+  container.replaceChildren(svg);
+
+  return {
+    highlight(state, edgeKey) {
+      nodeEls.forEach((n, q) => n.classList.toggle("cur", q === state));
+      edgeEls.forEach((ge, k) => {
+        const on = k === edgeKey;
+        ge.classList.toggle("active", on);
+        ge.querySelector("path").setAttribute("marker-end", `url(#ar-${on ? "a" : "d"}-${uid})`);
+      });
+    },
+  };
+}
+
+/* ======================================================================= *
+ *  Tape
+ * ======================================================================= */
+function renderTape(tapeEl, text, trace, m, k, matchFrom) {
+  const frag = document.createDocumentFragment();
+  const startCell = document.createElement("div");
+  startCell.className = "cell start";
+  startCell.innerHTML = `<div class="ch">start</div><div class="st">${m.states[trace[0]]}</div>`;
+  frag.appendChild(startCell);
+  [...text].forEach((ch, i) => {
+    const c = document.createElement("div");
+    let cls = "cell";
+    if (i < k) cls += " read";
+    if (i === k) cls += " head";
+    if (matchFrom && i >= matchFrom[0] && i < matchFrom[1] && i < k) cls += " match";
+    c.className = cls;
+    c.innerHTML = `<div class="ch">${esc(ch)}</div><div class="st">${i < k ? m.states[trace[i + 1]] : ""}</div>`;
+    frag.appendChild(c);
+  });
+  tapeEl.replaceChildren(frag);
+}
+function scrollHead(wrap) {
+  const head = wrap.querySelector(".head") || wrap.querySelector(".cell:last-child");
+  if (!head) return;
+  const target = head.offsetLeft - wrap.clientWidth / 2 + head.offsetWidth / 2;
+  wrap.scrollLeft = Math.max(0, target);
+}
+
+/* ======================================================================= *
+ *  Hero animation
+ * ======================================================================= */
+(function hero() {
+  const text = "http://blog-login.example";
+  const c = compileRegex(".*login.*"), m = c.min;
+  document.getElementById("hero-input").textContent = "“" + text + "”";
+  const view = renderGraph(document.getElementById("hero-diagram"), graphFromDFA(m, c.labels, false), { gapX: 96, faintBack: true, fit: true, label: "Minimal DFA for strings containing login" });
+  const trace = runDFA(m, text), tape = document.getElementById("hero-tape"), wrap = document.getElementById("hero-tape-wrap");
+  const verdict = document.getElementById("hero-verdict");
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let k = reduce ? text.length : 0;
+  const end = text.indexOf("login") + 5;
+  function draw() {
+    renderTape(tape, text, trace, m, k, [end - 5, end]);
+    const prev = k > 0 ? trace[k - 1] + ">" + trace[k] : null;
+    view.highlight(trace[k], prev);
+    const acc = m.accepting.has(trace[k]);
+    verdict.textContent = k >= text.length ? (acc ? "accepted" : "rejected") : acc ? "q5 ∈ F" : `step ${k}/${text.length}`;
+    verdict.classList.toggle("acc", acc);
+    scrollHead(wrap);
+  }
+  draw();
+  if (reduce) return;
+  setInterval(() => { k = k >= text.length + 6 ? 0 : k + 1; draw(); }, 340);
+})();
+
+/* ======================================================================= *
+ *  Analyzer UI
+ * ======================================================================= */
+const SAMPLE_URLS = [
+  "http://login.example.com/verify-account",
+  "http://mybank.com@203.0.113.7/confirm",
+  "http://192.168.10.5/secure/bank/login.php",
+  "http://xn--mybnk-9qa.example/signin",
+  "https://www.google.com/",
+  "https://accounts.google.com/signin",
+];
+const riskClass = (c) => (c === "Low Risk" ? "low" : c === "Suspicious" ? "mid" : "high");
+
+function drawGauge(score) {
+  const svg = document.getElementById("gauge");
+  svg.replaceChildren();
+  const cx = 120, cy = 120, r = 96, max = 8;
+  const ang = (v) => Math.PI * (1 - Math.min(v, max) / max);
+  const arc = (v1, v2, color) => {
+    const a1 = ang(v1), a2 = ang(v2);
+    el("path", { d: `M${cx + r * Math.cos(a1)},${cy - r * Math.sin(a1)} A${r},${r} 0 0 1 ${cx + r * Math.cos(a2)},${cy - r * Math.sin(a2)}`, stroke: color, "stroke-width": 14, fill: "none", "stroke-linecap": "butt" }, svg);
+  };
+  arc(0, 1.5, "var(--low)"); arc(1.5, 3.5, "var(--mid)"); arc(3.5, 8, "var(--high)");
+  for (let v = 0; v <= max; v++) {
+    const a = ang(v);
+    el("line", { x1: cx + (r - 12) * Math.cos(a), y1: cy - (r - 12) * Math.sin(a), x2: cx + (r - 18) * Math.cos(a), y2: cy - (r - 18) * Math.sin(a), stroke: "var(--muted)", "stroke-width": 1.2 }, svg);
+    const t = el("text", { x: cx + (r - 30) * Math.cos(a), y: cy - (r - 30) * Math.sin(a) + 4, "text-anchor": "middle", fill: "var(--muted)", "font-size": "10", "font-family": "JetBrains Mono, monospace" }, svg);
+    t.textContent = v === max ? "8+" : v;
+  }
+  const a = ang(score);
+  el("line", { x1: cx, y1: cy, x2: cx + (r - 6) * Math.cos(a), y2: cy - (r - 6) * Math.sin(a), stroke: "var(--fg)", "stroke-width": 3, "stroke-linecap": "round" }, svg);
+  el("circle", { cx, cy, r: 6, fill: "var(--fg)" }, svg);
+}
+
+function renderAnalysis(raw) {
+  const a = analyse(raw);
+  const p = a.parts;
+  document.getElementById("score").textContent = a.score;
+  document.getElementById("class-pill").innerHTML = `<span class="pill ${riskClass(a.classification)}">${a.classification}</span>`;
+  drawGauge(a.score);
+
+  const hits = a.findings.filter((f) => f.hit);
+  document.getElementById("breakdown").innerHTML =
+    (hits.length ? hits.map((f) => `<tr><td>${esc(f.title)}</td><td>+${f.score}</td></tr>`).join("") : `<tr><td>No indicator detected</td><td>0</td></tr>`) +
+    `<tr class="total"><td>Total score</td><td>${a.score}</td></tr>`;
+
+  // URL segments
+  const segs = [];
+  if (p.scheme) segs.push(["scheme", p.scheme + "://"]);
+  if (p.userinfo) segs.push(["userinfo", p.userinfo + "@"]);
+  const isIP = a.findings.find((f) => f.id === "ipv4_host").hit;
+  if (isIP || p.labels.length < 2) segs.push(["domain", p.host]);
+  else { if (p.subdomain) segs.push(["sub", p.subdomain + "."]); segs.push(["domain", p.domain]); }
+  if (p.port) segs.push(["port", ":" + p.port]);
+  if (p.path) segs.push(["path", p.path]);
+  if (p.query) segs.push(["query", "?" + p.query]);
+  if (p.fragment) segs.push(["frag", "#" + p.fragment]);
+  document.getElementById("urlbar").innerHTML = segs.map(([k, v]) => `<span class="seg seg-${k}">${esc(v)}</span>`).join("");
+  const comp = [
+    ["Scheme", p.scheme, "var(--muted)"], ["Userinfo", p.userinfo, "var(--high)"], ["Subdomain", isIP ? "" : p.subdomain, "var(--mid)"],
+    ["Domain", isIP ? p.host : p.domain, "var(--accent)"], ["Port", p.port, "var(--muted)"], ["Path", p.path, "var(--low)"],
+    ["Query", p.query, "var(--accept)"], ["Fragment", p.fragment, "var(--muted)"],
+  ];
+  document.getElementById("comp-list").innerHTML = comp.map(([k, v, c]) =>
+    `<div><dt><i class="swatch" style="background:${c}"></i>${k}</dt><dd>${v ? esc(v) : '<span style="color:var(--muted)">—</span>'}</dd></div>`).join("") +
+    (p.userinfo ? `<div style="grid-column:1/-1"><dd style="font-family:var(--font-body);color:var(--high)">Everything before the “@” is user information. The browser actually connects to <b>${esc(p.host)}</b>.</dd></div>` : "");
+
+  // DFA cards
+  const dfas = a.findings.filter((f) => f.kind === "dfa");
+  document.getElementById("dfa-count").textContent = `· ${dfas.filter((f) => f.hit).length} of ${dfas.length} accepted`;
+  document.getElementById("findings").innerHTML = dfas.map((f) => {
+    const m = compileRegex(f.regex).min;
+    let snip = "";
+    if (f.hit && f.input) {
+      let s = f.firstAcc, len;
+      if (f.id === "ipv4_host") { s = 0; len = f.input.length; }
+      else { const kw = f.regex.replace(/^\.\*|\.\*$/g, ""); len = kw.length; s = f.firstAcc - len; }
+      const from = Math.max(0, s - 14), to = Math.min(f.input.length, s + len + 14);
+      snip = (from > 0 ? "…" : "") + esc(f.input.slice(from, s)) + "<mark>" + esc(f.input.slice(s, s + len)) + "</mark>" + esc(f.input.slice(s + len, to)) + (to < f.input.length ? "…" : "");
+    }
+    return `<div class="finding ${f.hit ? "hit" : ""}">
+      <div class="top"><span class="name">${esc(f.title)}</span><span class="w">${f.hit ? "+" + f.weight : "w " + f.weight}</span></div>
+      <div class="re">${esc(f.regex)} · reads ${f.scope}</div>
+      <div class="state"><span>δ̂(q0, w) = ${f.finalState} ${f.hit ? "∈" : "∉"} F</span><span class="tag ${f.hit ? "acc" : "rej"}">${f.hit ? "ACCEPT" : "REJECT"}</span></div>
+      ${snip ? `<div class="snip">${snip}</div>` : ""}
+      <button class="link-btn" data-sim="${f.id}">Simulate this DFA (${m.states.length} states) →</button>
+    </div>`;
+  }).join("");
+  document.getElementById("rules").innerHTML = a.findings.filter((f) => f.kind === "rule").map((f) =>
+    `<div class="rule ${f.hit ? "hit" : ""}"><span>${esc(f.title)}<br><small>${esc(f.detail)}</small></span><span class="tag ${f.hit ? "acc" : "rej"}" style="${f.hit ? "background:var(--mid)" : ""}">${f.hit ? "+1" : "OK"}</span></div>`).join("");
+  currentAnalysis = a;
+}
+let currentAnalysis = null;
+
+document.getElementById("analyze-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const v = document.getElementById("url-input").value.trim();
+  if (v) renderAnalysis(v);
+});
+const samplesEl = document.getElementById("samples");
+SAMPLE_URLS.forEach((u) => {
+  const b = document.createElement("button");
+  b.type = "button"; b.className = "sample"; b.textContent = u.replace(/^https?:\/\//, "");
+  b.title = u;
+  b.addEventListener("click", () => { document.getElementById("url-input").value = u; renderAnalysis(u); });
+  samplesEl.appendChild(b);
+});
+document.getElementById("findings").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-sim]");
+  if (!b) return;
+  const f = currentAnalysis.findings.find((x) => x.id === b.dataset.sim);
+  sim.load(f.id, f.input);
+  document.getElementById("simulator").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+});
+
+/* ======================================================================= *
+ *  Simulator
+ * ======================================================================= */
+const sim = (() => {
+  const sel = document.getElementById("sim-pattern"), inp = document.getElementById("sim-input");
+  const deadBox = document.getElementById("sim-dead"), playBtn = document.getElementById("sim-play");
+  const speed = document.getElementById("sim-speed");
+  PATTERNS.forEach((p) => { const o = document.createElement("option"); o.value = p.id; o.textContent = `${p.title} · ${p.regex}`; sel.appendChild(o); });
+  let st = { pid: "kw_login", text: "", c: null, trace: [], k: 0, view: null, timer: null };
+
+  function build() {
+    const p = PATTERNS.find((x) => x.id === st.pid);
+    st.c = compileRegex(p.regex);
+    const m = st.c.min;
+    st.view = renderGraph(document.getElementById("sim-diagram"), graphFromDFA(m, st.c.labels, deadBox.checked), { gapX: 120, faintBack: true, label: `Minimal DFA for ${p.regex}` });
+    const dead = deadStates(m);
+    const Q = m.states.map((s, i) => (dead.has(i) ? "q_d" : s));
+    document.getElementById("sim-tuple").innerHTML =
+      `<div><span class="k">L</span> = L(<code>${esc(p.regex)}</code>)</div>` +
+      `<div><span class="k">Q</span> = {${Q.join(", ")}}</div>` +
+      `<div><span class="k">Σ</span> = {${st.c.labels.join(", ")}}</div>` +
+      `<div><span class="k">q₀</span> = ${m.states[m.start]}</div>` +
+      `<div><span class="k">F</span> = {${[...m.accepting].map((q) => m.states[q]).join(", ")}}</div>` +
+      `<div><span class="k">reads</span> the URL ${p.scope === "url" ? "string" : p.scope}</div>` +
+      (dead.size && !deadBox.checked ? `<div class="note" style="font-family:var(--font-body);margin-top:6px">The dead state is hidden in the diagram. Every missing arrow leads to it.</div>` : "");
+    rerun();
+  }
+  function rerun() {
+    st.text = inp.value.toLowerCase();
+    st.trace = runDFA(st.c.min, st.text);
+    st.k = Math.min(st.k, st.text.length);
+    draw();
+  }
+  function draw() {
+    const m = st.c.min, k = st.k, labels = st.c.labels;
+    renderTape(document.getElementById("sim-tape"), st.text, st.trace, m, k, null);
+    scrollHead(document.getElementById("sim-tape-wrap"));
+    const q = st.trace[k];
+    st.view.highlight(q, k > 0 ? st.trace[k - 1] + ">" + q : null);
+    const note = document.getElementById("sim-note");
+    if (k === 0) note.innerHTML = `Start in <b>${m.states[q]}</b>. ${st.text.length} symbols to read.`;
+    else {
+      const ch = st.text[k - 1], x = symbolOf(m, ch);
+      note.innerHTML = `step ${k}/${st.text.length}: δ(<b>${m.states[st.trace[k - 1]]}</b>, '${esc(ch)}'${labels[x] !== ch ? ` ∈ ${esc(labels[x])}` : ""}) = <b>${m.states[q]}</b>`;
+    }
+    if (k === st.text.length) {
+      const acc = m.accepting.has(q);
+      note.innerHTML += `<br>${acc ? `<span class="acc">Input consumed in ${m.states[q]} ∈ F: ACCEPTED</span>` : `Input consumed in ${m.states[q]} ∉ F: REJECTED`}`;
+    }
+    // table
+    const next = k < st.text.length ? symbolOf(m, st.text[k]) : -1;
+    const dead = deadStates(m);
+    let h = `<table class="tt"><thead><tr><th>δ</th>${labels.map((l, i) => `<th class="${i === next ? "hot" : ""}">${esc(l)}</th>`).join("")}</tr></thead><tbody>`;
+    m.delta.forEach((row, s) => {
+      if (dead.has(s) && !deadBox.checked) return;
+      const mark = (s === m.start ? "→" : "") + (m.accepting.has(s) ? "*" : "");
+      h += `<tr class="${s === q ? "cur" : ""}"><td class="rowh ${m.accepting.has(s) ? "accst" : ""}">${mark}${m.states[s]}</td>` +
+        row.map((t, i) => `<td class="${s === q && i === next ? "hot" : ""}">${dead.has(t) && !deadBox.checked ? "qd" : m.states[t]}</td>`).join("") + "</tr>";
+    });
+    document.getElementById("sim-table").innerHTML = h + "</tbody></table>";
+    playBtn.textContent = st.timer ? "❚❚ Pause" : "▶ Play";
+  }
+  const stop = () => { clearInterval(st.timer); st.timer = null; };
+  const step = (d) => { st.k = Math.max(0, Math.min(st.text.length, st.k + d)); draw(); };
+  playBtn.addEventListener("click", () => {
+    if (st.timer) { stop(); draw(); return; }
+    if (st.k >= st.text.length) st.k = 0;
+    st.timer = setInterval(() => { if (st.k >= st.text.length) { stop(); draw(); return; } step(1); }, 1100 - speed.value * 100);
+    draw();
+  });
+  speed.addEventListener("input", () => { if (st.timer) { stop(); playBtn.click(); } });
+  document.getElementById("sim-fwd").addEventListener("click", () => { stop(); step(1); });
+  document.getElementById("sim-back").addEventListener("click", () => { stop(); step(-1); });
+  document.getElementById("sim-reset").addEventListener("click", () => { stop(); st.k = 0; draw(); });
+  document.getElementById("sim-end").addEventListener("click", () => { stop(); st.k = st.text.length; draw(); });
+  sel.addEventListener("change", () => { stop(); st.pid = sel.value; st.k = 0; build(); });
+  inp.addEventListener("input", () => { stop(); st.k = 0; rerun(); });
+  deadBox.addEventListener("change", build);
+  return {
+    load(pid, text) { stop(); st.pid = pid; sel.value = pid; inp.value = text; st.k = 0; build(); },
+  };
+})();
+
+/* ======================================================================= *
+ *  Construction lab
+ * ======================================================================= */
+const LAB_PRESETS = [
+  [".*login.*", "keyword login"],
+  ["[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+", "IPv4 host"],
+  [".*@.*", "@ symbol"],
+  [".*xn--.*", "punycode"],
+  ["(a|b)*abb", "textbook (a|b)*abb"],
+  [".*(bank|login).*", "union of two keywords"],
+];
+function renderLab(regex) {
+  const err = document.getElementById("lab-err");
+  let c;
+  try { c = compileRegex(regex); err.textContent = ""; }
+  catch (e) { err.textContent = e instanceof RegexError ? "That expression could not be parsed: " + e.message + "." : String(e); return; }
+  const m = c.min, liveMin = m.states.length - deadStates(m).size;
+  document.getElementById("lab-stats").innerHTML = [
+    [c.labels.length, "symbol classes", "alphabet compression"],
+    [c.nfa.n, `NFA states (${c.nfa.nEps} ε-moves)`, "regex → NFA"],
+    [c.subset.states.length, "DFA states", "subset construction"],
+    [m.states.length, `minimal DFA states${liveMin !== m.states.length ? " incl. dead" : ""}`, "Moore refinement"],
+  ].map(([n, l, a]) => `<div><span class="alg">${a}</span><span class="n">${n}</span><span class="l">${l}</span></div>`).join("");
+
+  const steps = document.getElementById("lab-steps");
+  steps.innerHTML = `
+    <div class="step"><div class="step-h"><span class="num">1</span><h3>Alphabet compression</h3></div>
+      <p>Σ has ${SIGMA.length} symbols. Characters that every character set in the expression treats the same way are merged into one class, so δ needs ${c.labels.length} columns instead of ${SIGMA.length}.</p>
+      <div class="classes">${c.classes.map((cls, i) => `<span class="cls"><b>${esc(c.labels[i])}</b>${cls.length === 1 && cls[0] !== OTHER ? "" : cls.length > 24 ? cls.length + " characters, " + esc(cls.filter((x) => x !== OTHER).slice(0, 12).join(" ")) + " …" : esc(cls.map((x) => (x === OTHER ? "⊥" : x)).join(" "))}</span>`).join("")}</div></div>
+    <div class="step"><div class="step-h"><span class="num">2</span><h3>Regular expression → NFA</h3></div>
+      <p>Each symbol becomes a two-state fragment. Concatenation, union and star join fragments with ε-moves. The result has one start state (${c.nfa.start}) and one accepting state (${c.nfa.accept}).</p>
+      <div class="diagram" id="lab-nfa"></div></div>
+    <div class="step"><div class="step-h"><span class="num">3</span><h3>Subset construction: NFA → DFA</h3></div>
+      <p>Each DFA state D<sub>i</sub> is the ε-closure of a set of NFA states. A D-state is accepting when its set contains NFA state ${c.nfa.accept}. ${c.rows.some((r) => !r.nfa.length) ? "The empty set ∅ is the dead state." : ""}</p>
+      <div class="tt-wrap"><table class="tt"><thead><tr><th>D</th><th>ε-closure (NFA states)</th>${c.labels.map((l) => `<th>${esc(l)}</th>`).join("")}</tr></thead><tbody>
+      ${c.rows.slice(0, 80).map((r) => `<tr><td class="rowh ${r.accepting ? "accst" : ""}">${r.index === 0 ? "→" : ""}${r.accepting ? "*" : ""}D${r.index}</td><td style="text-align:left;white-space:normal;min-width:180px">{${r.nfa.length ? r.nfa.join(", ") : "∅"}}</td>${r.targets.map((t) => `<td>D${t}</td>`).join("")}</tr>`).join("")}
+      </tbody></table></div>${c.rows.length > 80 ? `<p class="note" style="margin-top:8px">Showing 80 of ${c.rows.length} rows.</p>` : ""}</div>
+    <div class="step"><div class="step-h"><span class="num">4</span><h3>Minimisation by partition refinement</h3></div>
+      <p>Start from {F, Q∖F}. In every round, split a block when two of its states move to different blocks on some symbol. When no block splits, each block is one state of the minimal DFA (one Myhill–Nerode class).</p>
+      <div class="rounds">${c.rounds.map((r, i) => `<div><span class="r">round ${i}</span>${r.map((b) => `<span class="blk ${b.some((q) => c.subset.accepting.has(q)) ? "acc" : ""}">{${b.map((q) => "D" + q).join(",")}}</span>`).join("")}</div>`).join("")}
+      <div><span class="r">result</span><span class="note">${c.subset.states.length} → ${m.states.length} states</span></div></div></div>
+    <div class="step"><div class="step-h"><span class="num">5</span><h3>Minimal DFA</h3></div>
+      <p>States renamed q0, q1, … in breadth-first order from the start state. ${deadStates(m).size ? "The dead state qd is drawn dashed." : "There is no dead state: once the pattern is found, the accepting state loops on every symbol."}</p>
+      <div class="diagram" id="lab-dfa"></div><div class="tt-wrap" id="lab-dfa-table"></div></div>`;
+  const nfaBox = document.getElementById("lab-nfa");
+  if (c.nfa.n <= 48) renderGraph(nfaBox, graphFromNFA(c.nfa, c.labels), { gapX: 74, label: "NFA" });
+  else nfaBox.innerHTML = `<p class="note">${c.nfa.n} states is too many to draw clearly. The subset construction below lists every reachable set of these states.</p>`;
+  const dfaBox = document.getElementById("lab-dfa");
+  if (m.states.length <= 30) renderGraph(dfaBox, graphFromDFA(m, c.labels, true), { gapX: 120, faintBack: true, label: "Minimal DFA" });
+  else dfaBox.innerHTML = `<p class="note">${m.states.length} states. See the transition table below.</p>`;
+  let t = `<table class="tt"><thead><tr><th>δ</th>${c.labels.map((l) => `<th>${esc(l)}</th>`).join("")}</tr></thead><tbody>`;
+  m.delta.forEach((row, s) => { t += `<tr><td class="rowh ${m.accepting.has(s) ? "accst" : ""}">${s === m.start ? "→" : ""}${m.accepting.has(s) ? "*" : ""}${m.states[s]}</td>${row.map((x) => `<td>${m.states[x]}</td>`).join("")}</tr>`; });
+  document.getElementById("lab-dfa-table").innerHTML = t + "</tbody></table>";
+}
+document.getElementById("lab-form").addEventListener("submit", (e) => { e.preventDefault(); renderLab(document.getElementById("lab-regex").value); });
+const presetsEl = document.getElementById("lab-presets");
+LAB_PRESETS.forEach(([r, name]) => {
+  const b = document.createElement("button");
+  b.type = "button"; b.className = "sample"; b.textContent = name; b.title = r;
+  b.addEventListener("click", () => { document.getElementById("lab-regex").value = r; renderLab(r); });
+  presetsEl.appendChild(b);
+});
+
+/* ======================================================================= *
+ *  Architecture tables
+ * ======================================================================= */
+document.getElementById("weights").innerHTML = `<thead><tr><th>Indicator</th><th>Detected by</th><th class="num">Weight</th></tr></thead><tbody>` +
+  [["Each suspicious keyword (9)", "DFA", 1], ["“@” symbol", "DFA", 2], ["IPv4 address as hostname", "DFA", 2], ["Punycode host", "DFA", 1], ["“//” inside path", "DFA", 1],
+   [`URL longer than ${LONG_URL} characters`, "rule", 1], [`More than ${MAX_HOST_LABELS} hostname labels`, "rule", 1], [`More than ${MAX_SPECIAL} special characters`, "rule", 1]]
+    .map(([a, b, w]) => `<tr><td>${a}</td><td><span class="mono">${b}</span></td><td class="num">+${w}</td></tr>`).join("") + "</tbody>";
+document.getElementById("pattern-table").innerHTML = `<thead><tr><th>Regular expression</th><th>Reads</th><th class="num">States</th></tr></thead><tbody>` +
+  PATTERNS.map((p) => `<tr><td class="mono" style="font-size:.8rem;overflow-wrap:anywhere">${esc(p.regex)}</td><td>${p.scope}</td><td class="num">${compileRegex(p.regex).min.states.length}</td></tr>`).join("") + "</tbody>";
+
+/* ======================================================================= *
+ *  Results (numbers injected from results/results.json by build_site.py)
+ * ======================================================================= */
+const RESULTS = /*RESULTS-START*/{"sizes":[{"id":"kw_login","regex":".*login.*","symbol_classes":6,"nfa_states":18,"nfa_edges":31,"nfa_eps":14,"subset_dfa_states":13,"min_dfa_states":6,"refinement_rounds":5,"min_dfa_has_dead_state":false},{"id":"kw_signin","regex":".*signin.*","symbol_classes":5,"nfa_states":20,"nfa_edges":31,"nfa_eps":15,"subset_dfa_states":15,"min_dfa_states":7,"refinement_rounds":6,"min_dfa_has_dead_state":false},{"id":"kw_verify","regex":".*verify.*","symbol_classes":7,"nfa_states":20,"nfa_edges":35,"nfa_eps":15,"subset_dfa_states":15,"min_dfa_states":7,"refinement_rounds":6,"min_dfa_has_dead_state":false},{"id":"kw_account","regex":".*account.*","symbol_classes":7,"nfa_states":22,"nfa_edges":37,"nfa_eps":16,"subset_dfa_states":17,"min_dfa_states":8,"refinement_rounds":7,"min_dfa_has_dead_state":false},{"id":"kw_password","regex":".*password.*","symbol_classes":8,"nfa_states":24,"nfa_edges":41,"nfa_eps":17,"subset_dfa_states":19,"min_dfa_states":9,"refinement_rounds":8,"min_dfa_has_dead_state":false},{"id":"kw_secure","regex":".*secure.*","symbol_classes":6,"nfa_states":20,"nfa_edges":33,"nfa_eps":15,"subset_dfa_states":15,"min_dfa_states":7,"refinement_rounds":6,"min_dfa_has_dead_state":false},{"id":"kw_update","regex":".*update.*","symbol_classes":7,"nfa_states":20,"nfa_edges":35,"nfa_eps":15,"subset_dfa_states":15,"min_dfa_states":7,"refinement_rounds":6,"min_dfa_has_dead_state":false},{"id":"kw_bank","regex":".*bank.*","symbol_classes":5,"nfa_states":16,"nfa_edges":27,"nfa_eps":13,"subset_dfa_states":11,"min_dfa_states":5,"refinement_rounds":4,"min_dfa_has_dead_state":false},{"id":"kw_confirm","regex":".*confirm.*","symbol_classes":8,"nfa_states":22,"nfa_edges":39,"nfa_eps":16,"subset_dfa_states":17,"min_dfa_states":8,"refinement_rounds":7,"min_dfa_has_dead_state":false},{"id":"at_symbol","regex":".*@.*","symbol_classes":2,"nfa_states":10,"nfa_edges":15,"nfa_eps":10,"subset_dfa_states":5,"min_dfa_states":2,"refinement_rounds":1,"min_dfa_has_dead_state":false},{"id":"ipv4_host","regex":"[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+","symbol_classes":3,"nfa_states":22,"nfa_edges":25,"nfa_eps":18,"subset_dfa_states":9,"min_dfa_states":9,"refinement_rounds":8,"min_dfa_has_dead_state":true},{"id":"punycode","regex":".*xn--.*","symbol_classes":4,"nfa_states":16,"nfa_edges":25,"nfa_eps":13,"subset_dfa_states":11,"min_dfa_states":5,"refinement_rounds":4,"min_dfa_has_dead_state":false},{"id":"dbl_slash","regex":".*//.*","symbol_classes":2,"nfa_states":12,"nfa_edges":17,"nfa_eps":11,"subset_dfa_states":7,"min_dfa_states":3,"refinement_rounds":2,"min_dfa_has_dead_state":false},{"id":"union_keywords","regex":".*(login|signin|verify|account|password|secure|update|bank|confirm).*","symbol_classes":22,"nfa_states":120,"nfa_edges":173,"nfa_eps":74,"subset_dfa_states":111,"min_dfa_states":44,"refinement_rounds":8,"min_dfa_has_dead_state":false}],"equivalence":[{"id":"kw_login","random_samples":20000,"random_agree":20000,"random_accepted":8,"exhaustive_max_len":7,"exhaustive_strings":335923,"exhaustive_agree":335923},{"id":"kw_signin","random_samples":20000,"random_agree":20000,"random_accepted":6,"exhaustive_max_len":7,"exhaustive_strings":97656,"exhaustive_agree":97656},{"id":"kw_verify","random_samples":20000,"random_agree":20000,"random_accepted":1,"exhaustive_max_len":6,"exhaustive_strings":137257,"exhaustive_agree":137257},{"id":"kw_account","random_samples":20000,"random_agree":20000,"random_accepted":0,"exhaustive_max_len":6,"exhaustive_strings":137257,"exhaustive_agree":137257},{"id":"kw_password","random_samples":20000,"random_agree":20000,"random_accepted":0,"exhaustive_max_len":6,"exhaustive_strings":299593,"exhaustive_agree":299593},{"id":"kw_secure","random_samples":20000,"random_agree":20000,"random_accepted":2,"exhaustive_max_len":7,"exhaustive_strings":335923,"exhaustive_agree":335923},{"id":"kw_update","random_samples":20000,"random_agree":20000,"random_accepted":0,"exhaustive_max_len":6,"exhaustive_strings":137257,"exhaustive_agree":137257},{"id":"kw_bank","random_samples":20000,"random_agree":20000,"random_accepted":186,"exhaustive_max_len":7,"exhaustive_strings":97656,"exhaustive_agree":97656},{"id":"kw_confirm","random_samples":20000,"random_agree":20000,"random_accepted":0,"exhaustive_max_len":6,"exhaustive_strings":299593,"exhaustive_agree":299593},{"id":"at_symbol","random_samples":20000,"random_agree":20000,"random_accepted":19159,"exhaustive_max_len":18,"exhaustive_strings":524287,"exhaustive_agree":524287},{"id":"ipv4_host","random_samples":20000,"random_agree":20000,"random_accepted":0,"exhaustive_max_len":11,"exhaustive_strings":265720,"exhaustive_agree":265720},{"id":"punycode","random_samples":20000,"random_agree":20000,"random_accepted":820,"exhaustive_max_len":9,"exhaustive_strings":349525,"exhaustive_agree":349525},{"id":"dbl_slash","random_samples":20000,"random_agree":20000,"random_accepted":17811,"exhaustive_max_len":18,"exhaustive_strings":524287,"exhaustive_agree":524287},{"id":"union_keywords","random_samples":20000,"random_agree":20000,"random_accepted":0,"exhaustive_max_len":4,"exhaustive_strings":245411,"exhaustive_agree":245411}],"examples":[{"url":"https://www.google.com/","label":"benign","score":0,"classification":"Low Risk","flagged":false,"indicators":[]},{"url":"https://github.com/nilay-11","label":"benign","score":0,"classification":"Low Risk","flagged":false,"indicators":[]},{"url":"https://en.wikipedia.org/wiki/Finite-state_machine","label":"benign","score":0,"classification":"Low Risk","flagged":false,"indicators":[]},{"url":"https://vit.ac.in/academics","label":"benign","score":0,"classification":"Low Risk","flagged":false,"indicators":[]},{"url":"https://docs.python.org/3/library/re.html","label":"benign","score":0,"classification":"Low Risk","flagged":false,"indicators":[]},{"url":"https://www.amazon.in/gp/cart/view.html","label":"benign","score":0,"classification":"Low Risk","flagged":false,"indicators":[]},{"url":"https://stackoverflow.com/questions/tagged/regex","label":"benign","score":0,"classification":"Low Risk","flagged":false,"indicators":[]},{"url":"https://news.ycombinator.com/item?id=1","label":"benign","score":0,"classification":"Low Risk","flagged":false,"indicators":[]},{"url":"https://accounts.google.com/signin","label":"benign","score":2,"classification":"Suspicious","flagged":true,"indicators":["kw_signin","kw_account"]},{"url":"https://www.icicibank.com/","label":"benign","score":1,"classification":"Low Risk","flagged":false,"indicators":["kw_bank"]},{"url":"http://login.example.com/verify-account","label":"phish","score":3,"classification":"Suspicious","flagged":true,"indicators":["kw_login","kw_verify","kw_account"]},{"url":"http://login-example.com/verify","label":"phish","score":2,"classification":"Suspicious","flagged":true,"indicators":["kw_login","kw_verify"]},{"url":"http://192.168.10.5/secure/bank/login.php","label":"phish","score":5,"classification":"High Risk","flagged":true,"indicators":["kw_login","kw_secure","kw_bank","ipv4_host"]},{"url":"http://mybank.com@203.0.113.7/confirm","label":"phish","score":6,"classification":"High Risk","flagged":true,"indicators":["kw_bank","kw_confirm","at_symbol","ipv4_host"]},{"url":"http://secure-update.mybank.verify.example.net/account/login","label":"phish","score":7,"classification":"High Risk","flagged":true,"indicators":["kw_login","kw_verify","kw_account","kw_secure","kw_update","kw_bank","many_subdomains"]},{"url":"https://mybank.example-secure-login.xyz/password/reset?user=abc&token=xyz&step=2&ref=mail","label":"phish","score":6,"classification":"High Risk","flagged":true,"indicators":["kw_login","kw_password","kw_secure","kw_bank","long_url","special_chars"]},{"url":"http://xn--mybnk-9qa.example/signin","label":"phish","score":2,"classification":"Suspicious","flagged":true,"indicators":["kw_signin","punycode"]},{"url":"http://198.51.100.23/~user/account_update.html","label":"phish","score":4,"classification":"High Risk","flagged":true,"indicators":["kw_account","kw_update","ipv4_host"]},{"url":"https://example.org//redirect//login.mybank.example/","label":"phish","score":3,"classification":"Suspicious","flagged":true,"indicators":["kw_login","kw_bank","dbl_slash"]},{"url":"http://update.mybank.com.account-verify.example.ru/confirm","label":"phish","score":6,"classification":"High Risk","flagged":true,"indicators":["kw_verify","kw_account","kw_update","kw_bank","kw_confirm","many_subdomains"]},{"url":"http://bit.ly/3xYzAbc","label":"phish","score":0,"classification":"Low Risk","flagged":false,"indicators":[]},{"url":"https://mybank-support.example.top/help","label":"phish","score":1,"classification":"Low Risk","flagged":false,"indicators":["kw_bank"]}],"confusion":{"tp":10,"fn":2,"fp":1,"tn":9},"timing":{"dfa_scan":[{"length":1000,"ms":0.389,"us_per_char":0.389},{"length":2000,"ms":0.763,"us_per_char":0.382},{"length":4000,"ms":1.573,"us_per_char":0.393},{"length":8000,"ms":3.165,"us_per_char":0.396},{"length":16000,"ms":6.088,"us_per_char":0.38}],"analyse_ms_per_url":0.323,"patterns_per_url":13}}/*RESULTS-END*/;
+
+function renderResults() {
+  if (!RESULTS) return;
+  const R = RESULTS;
+  const eqAll = R.equivalence.every((e) => e.random_agree === e.random_samples && e.exhaustive_agree === e.exhaustive_strings);
+  const totalChecked = R.equivalence.reduce((a, e) => a + e.random_samples + e.exhaustive_strings, 0);
+  const cm = R.confusion;
+  document.getElementById("kpis").innerHTML = [
+    [R.sizes.length - 1, "pattern DFAs compiled from regular expressions"],
+    [(totalChecked / 1e6).toFixed(2) + "M", `strings checked against Python re, ${eqAll ? "100% agreement" : "with disagreements"}`],
+    [R.timing.analyse_ms_per_url + " ms", "to analyse one URL in Python (13 DFAs + 3 rules)"],
+    [`${cm.tp + cm.tn}/${cm.tp + cm.tn + cm.fp + cm.fn}`, "illustrative URLs classified as labelled"],
+  ].map(([n, l]) => `<div class="kpi"><span class="n">${n}</span><span class="l">${l}</span></div>`).join("");
+
+  // size chart: grouped horizontal bars
+  const rows = R.sizes, max = Math.max(...rows.map((r) => r.nfa_states));
+  const W = 1000, left = 170, right = 120, rowH = 34, barH = 8, top = 26;
+  const H = top + rows.length * rowH + 10;
+  const x = (v) => left + (v / max) * (W - left - right);
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Automaton state counts per pattern">`;
+  for (let v = 0; v <= max; v += 20) s += `<line class="grid" x1="${x(v)}" x2="${x(v)}" y1="${top - 8}" y2="${H - 6}"/><text x="${x(v)}" y="${top - 12}" text-anchor="middle">${v}</text>`;
+  rows.forEach((r, i) => {
+    const y = top + i * rowH;
+    const name = r.id === "union_keywords" ? "union of 9 keywords" : r.id.replace("kw_", "");
+    s += `<text x="${left - 10}" y="${y + 15}" text-anchor="end">${esc(name)}</text>`;
+    [["nfa_states", "var(--c1)"], ["subset_dfa_states", "var(--c2)"], ["min_dfa_states", "var(--c3)"]].forEach(([k, col], j) => {
+      const by = y + 2 + j * (barH + 1);
+      s += `<rect x="${left}" y="${by}" width="${Math.max(1, x(r[k]) - left)}" height="${barH}" rx="2" fill="${col}"><title>${name}: ${r[k]}</title></rect>`;
+    });
+    s += `<text x="${x(r.nfa_states) + 6}" y="${y + 10}">${r.nfa_states}→${r.subset_dfa_states}→${r.min_dfa_states}</text>`;
+  });
+  document.getElementById("size-chart").innerHTML = s + "</svg>";
+
+  document.getElementById("eq-table").innerHTML = `<thead><tr><th>Pattern</th><th class="num">Random</th><th class="num">Exhaustive</th><th class="num">L</th></tr></thead><tbody>` +
+    R.equivalence.map((e) => `<tr><td class="mono" style="font-size:.8rem">${e.id === "union_keywords" ? "union" : e.id.replace("kw_", "")}</td><td class="num">${e.random_agree.toLocaleString()}/${e.random_samples.toLocaleString()}</td><td class="num">${e.exhaustive_agree.toLocaleString()}/${e.exhaustive_strings.toLocaleString()}</td><td class="num">${e.exhaustive_max_len}</td></tr>`).join("") + "</tbody>";
+
+  // timing chart
+  const T = R.timing.dfa_scan, tw = 520, th = 230, tl = 54, tb = 40, tt = 24, tr = 34;
+  const mx = Math.max(...T.map((d) => d.length)), my = Math.ceil(Math.max(...T.map((d) => d.ms)));
+  const X = (v) => tl + (v / mx) * (tw - tl - tr), Y = (v) => th - tb - (v / my) * (th - tb - tt);
+  let t = `<svg viewBox="0 0 ${tw} ${th}" role="img" aria-label="DFA scan time versus input length">`;
+  for (let v = 0; v <= my; v += Math.max(1, Math.round(my / 5))) t += `<line class="grid" x1="${tl}" x2="${tw - tr}" y1="${Y(v)}" y2="${Y(v)}"/><text x="${tl - 8}" y="${Y(v) + 4}" text-anchor="end">${v}</text>`;
+  T.forEach((d) => { t += `<text x="${X(d.length)}" y="${th - tb + 16}" text-anchor="middle">${d.length / 1000}k</text>`; });
+  t += `<text x="${(tl + tw - tr) / 2}" y="${th - 6}" text-anchor="middle">input length (characters)</text>`;
+  t += `<text x="14" y="${(th - tb) / 2}" text-anchor="middle" transform="rotate(-90 14 ${(th - tb) / 2})">ms</text>`;
+  t += `<path d="M${X(0)},${Y(0)} ${T.map((d) => `L${X(d.length)},${Y(d.ms)}`).join(" ")} L${X(mx)},${Y(0)} Z" fill="var(--accent-soft)"/>`;
+  t += `<path d="M${X(0)},${Y(0)} ${T.map((d) => `L${X(d.length)},${Y(d.ms)}`).join(" ")}" fill="none" stroke="var(--accent)" stroke-width="2.2"/>`;
+  T.forEach((d, i) => { t += `<circle cx="${X(d.length)}" cy="${Y(d.ms)}" r="${i === T.length - 1 ? 5 : 3.5}" fill="var(--accent)"><title>${d.length} chars: ${d.ms} ms</title></circle>`; });
+  const last = T[T.length - 1];
+  t += `<text x="${X(last.length) - 10}" y="${Y(last.ms) - 12}" text-anchor="end" style="fill:var(--fg)">${last.ms} ms · ${last.us_per_char} µs/char</text>`;
+  document.getElementById("time-chart").innerHTML = t + "</svg>";
+
+  document.getElementById("cm").innerHTML = `<div class="h"></div><div class="h">flagged</div><div class="h">not flagged</div>
+    <div class="h">phish</div><div class="ok"><b>${cm.tp}</b>true pos.</div><div class="bad"><b>${cm.fn}</b>false neg.</div>
+    <div class="h">benign</div><div class="bad"><b>${cm.fp}</b>false pos.</div><div class="ok"><b>${cm.tn}</b>true neg.</div>`;
+  const nm = (id) => id.replace("kw_", "").replace("_", " ");
+  document.getElementById("ex-table").innerHTML = `<thead><tr><th>URL</th><th>Label</th><th class="num">Score</th><th>Class</th><th>Indicators</th></tr></thead><tbody>` +
+    R.examples.map((r) => `<tr data-url="${esc(r.url)}" tabindex="0"><td class="u">${esc(r.url)}</td><td class="lbl">${r.label}</td><td class="num" style="text-align:right;font-family:var(--font-mono)">${r.score}</td><td><span class="pill ${riskClass(r.classification)}" style="font-size:.74rem;padding:3px 9px">${r.classification}</span></td><td class="ind">${r.indicators.map(nm).join(", ") || "—"}</td></tr>`).join("") + "</tbody>";
+}
+renderResults();
+const exTable = document.getElementById("ex-table");
+const openRow = (tr) => {
+  if (!tr || !tr.dataset.url) return;
+  document.getElementById("url-input").value = tr.dataset.url;
+  renderAnalysis(tr.dataset.url);
+  document.getElementById("analyzer").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+};
+exTable.addEventListener("click", (e) => openRow(e.target.closest("tr")));
+exTable.addEventListener("keydown", (e) => { if (e.key === "Enter") openRow(e.target.closest("tr")); });
+
+document.getElementById("bench-btn").addEventListener("click", () => {
+  const m = compileRegex(".*login.*").min;
+  const pool = "loginabcxyz./-";
+  let s = ""; for (let i = 0; i < 1000000; i++) s += pool[(i * 7919) % pool.length];
+  const t0 = performance.now(); runDFA(m, s); const ms = performance.now() - t0;
+  document.getElementById("bench-out").textContent = `1,000,000 characters in ${ms.toFixed(1)} ms (${(ms * 1000 / 1e6).toFixed(3)} µs per character), JavaScript engine.`;
+});
+
+/* ---- initial state ---- */
+renderAnalysis(document.getElementById("url-input").value);
+sim.load("kw_login", "http://secure-update.mybank.verify.example.net/account/login");
+renderLab(".*login.*");
+</script>

@@ -1,0 +1,572 @@
+{
+  "sizes": [
+    {
+      "id": "kw_login",
+      "regex": ".*login.*",
+      "symbol_classes": 6,
+      "nfa_states": 18,
+      "nfa_edges": 31,
+      "nfa_eps": 14,
+      "subset_dfa_states": 13,
+      "min_dfa_states": 6,
+      "refinement_rounds": 5,
+      "min_dfa_has_dead_state": false
+    },
+    {
+      "id": "kw_signin",
+      "regex": ".*signin.*",
+      "symbol_classes": 5,
+      "nfa_states": 20,
+      "nfa_edges": 31,
+      "nfa_eps": 15,
+      "subset_dfa_states": 15,
+      "min_dfa_states": 7,
+      "refinement_rounds": 6,
+      "min_dfa_has_dead_state": false
+    },
+    {
+      "id": "kw_verify",
+      "regex": ".*verify.*",
+      "symbol_classes": 7,
+      "nfa_states": 20,
+      "nfa_edges": 35,
+      "nfa_eps": 15,
+      "subset_dfa_states": 15,
+      "min_dfa_states": 7,
+      "refinement_rounds": 6,
+      "min_dfa_has_dead_state": false
+    },
+    {
+      "id": "kw_account",
+      "regex": ".*account.*",
+      "symbol_classes": 7,
+      "nfa_states": 22,
+      "nfa_edges": 37,
+      "nfa_eps": 16,
+      "subset_dfa_states": 17,
+      "min_dfa_states": 8,
+      "refinement_rounds": 7,
+      "min_dfa_has_dead_state": false
+    },
+    {
+      "id": "kw_password",
+      "regex": ".*password.*",
+      "symbol_classes": 8,
+      "nfa_states": 24,
+      "nfa_edges": 41,
+      "nfa_eps": 17,
+      "subset_dfa_states": 19,
+      "min_dfa_states": 9,
+      "refinement_rounds": 8,
+      "min_dfa_has_dead_state": false
+    },
+    {
+      "id": "kw_secure",
+      "regex": ".*secure.*",
+      "symbol_classes": 6,
+      "nfa_states": 20,
+      "nfa_edges": 33,
+      "nfa_eps": 15,
+      "subset_dfa_states": 15,
+      "min_dfa_states": 7,
+      "refinement_rounds": 6,
+      "min_dfa_has_dead_state": false
+    },
+    {
+      "id": "kw_update",
+      "regex": ".*update.*",
+      "symbol_classes": 7,
+      "nfa_states": 20,
+      "nfa_edges": 35,
+      "nfa_eps": 15,
+      "subset_dfa_states": 15,
+      "min_dfa_states": 7,
+      "refinement_rounds": 6,
+      "min_dfa_has_dead_state": false
+    },
+    {
+      "id": "kw_bank",
+      "regex": ".*bank.*",
+      "symbol_classes": 5,
+      "nfa_states": 16,
+      "nfa_edges": 27,
+      "nfa_eps": 13,
+      "subset_dfa_states": 11,
+      "min_dfa_states": 5,
+      "refinement_rounds": 4,
+      "min_dfa_has_dead_state": false
+    },
+    {
+      "id": "kw_confirm",
+      "regex": ".*confirm.*",
+      "symbol_classes": 8,
+      "nfa_states": 22,
+      "nfa_edges": 39,
+      "nfa_eps": 16,
+      "subset_dfa_states": 17,
+      "min_dfa_states": 8,
+      "refinement_rounds": 7,
+      "min_dfa_has_dead_state": false
+    },
+    {
+      "id": "at_symbol",
+      "regex": ".*@.*",
+      "symbol_classes": 2,
+      "nfa_states": 10,
+      "nfa_edges": 15,
+      "nfa_eps": 10,
+      "subset_dfa_states": 5,
+      "min_dfa_states": 2,
+      "refinement_rounds": 1,
+      "min_dfa_has_dead_state": false
+    },
+    {
+      "id": "ipv4_host",
+      "regex": "[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+",
+      "symbol_classes": 3,
+      "nfa_states": 22,
+      "nfa_edges": 25,
+      "nfa_eps": 18,
+      "subset_dfa_states": 9,
+      "min_dfa_states": 9,
+      "refinement_rounds": 8,
+      "min_dfa_has_dead_state": true
+    },
+    {
+      "id": "punycode",
+      "regex": ".*xn--.*",
+      "symbol_classes": 4,
+      "nfa_states": 16,
+      "nfa_edges": 25,
+      "nfa_eps": 13,
+      "subset_dfa_states": 11,
+      "min_dfa_states": 5,
+      "refinement_rounds": 4,
+      "min_dfa_has_dead_state": false
+    },
+    {
+      "id": "dbl_slash",
+      "regex": ".*//.*",
+      "symbol_classes": 2,
+      "nfa_states": 12,
+      "nfa_edges": 17,
+      "nfa_eps": 11,
+      "subset_dfa_states": 7,
+      "min_dfa_states": 3,
+      "refinement_rounds": 2,
+      "min_dfa_has_dead_state": false
+    },
+    {
+      "id": "union_keywords",
+      "regex": ".*(login|signin|verify|account|password|secure|update|bank|confirm).*",
+      "symbol_classes": 22,
+      "nfa_states": 120,
+      "nfa_edges": 173,
+      "nfa_eps": 74,
+      "subset_dfa_states": 111,
+      "min_dfa_states": 44,
+      "refinement_rounds": 8,
+      "min_dfa_has_dead_state": false
+    }
+  ],
+  "equivalence": [
+    {
+      "id": "kw_login",
+      "random_samples": 20000,
+      "random_agree": 20000,
+      "random_accepted": 8,
+      "exhaustive_max_len": 7,
+      "exhaustive_strings": 335923,
+      "exhaustive_agree": 335923
+    },
+    {
+      "id": "kw_signin",
+      "random_samples": 20000,
+      "random_agree": 20000,
+      "random_accepted": 6,
+      "exhaustive_max_len": 7,
+      "exhaustive_strings": 97656,
+      "exhaustive_agree": 97656
+    },
+    {
+      "id": "kw_verify",
+      "random_samples": 20000,
+      "random_agree": 20000,
+      "random_accepted": 1,
+      "exhaustive_max_len": 6,
+      "exhaustive_strings": 137257,
+      "exhaustive_agree": 137257
+    },
+    {
+      "id": "kw_account",
+      "random_samples": 20000,
+      "random_agree": 20000,
+      "random_accepted": 0,
+      "exhaustive_max_len": 6,
+      "exhaustive_strings": 137257,
+      "exhaustive_agree": 137257
+    },
+    {
+      "id": "kw_password",
+      "random_samples": 20000,
+      "random_agree": 20000,
+      "random_accepted": 0,
+      "exhaustive_max_len": 6,
+      "exhaustive_strings": 299593,
+      "exhaustive_agree": 299593
+    },
+    {
+      "id": "kw_secure",
+      "random_samples": 20000,
+      "random_agree": 20000,
+      "random_accepted": 2,
+      "exhaustive_max_len": 7,
+      "exhaustive_strings": 335923,
+      "exhaustive_agree": 335923
+    },
+    {
+      "id": "kw_update",
+      "random_samples": 20000,
+      "random_agree": 20000,
+      "random_accepted": 0,
+      "exhaustive_max_len": 6,
+      "exhaustive_strings": 137257,
+      "exhaustive_agree": 137257
+    },
+    {
+      "id": "kw_bank",
+      "random_samples": 20000,
+      "random_agree": 20000,
+      "random_accepted": 186,
+      "exhaustive_max_len": 7,
+      "exhaustive_strings": 97656,
+      "exhaustive_agree": 97656
+    },
+    {
+      "id": "kw_confirm",
+      "random_samples": 20000,
+      "random_agree": 20000,
+      "random_accepted": 0,
+      "exhaustive_max_len": 6,
+      "exhaustive_strings": 299593,
+      "exhaustive_agree": 299593
+    },
+    {
+      "id": "at_symbol",
+      "random_samples": 20000,
+      "random_agree": 20000,
+      "random_accepted": 19159,
+      "exhaustive_max_len": 18,
+      "exhaustive_strings": 524287,
+      "exhaustive_agree": 524287
+    },
+    {
+      "id": "ipv4_host",
+      "random_samples": 20000,
+      "random_agree": 20000,
+      "random_accepted": 0,
+      "exhaustive_max_len": 11,
+      "exhaustive_strings": 265720,
+      "exhaustive_agree": 265720
+    },
+    {
+      "id": "punycode",
+      "random_samples": 20000,
+      "random_agree": 20000,
+      "random_accepted": 820,
+      "exhaustive_max_len": 9,
+      "exhaustive_strings": 349525,
+      "exhaustive_agree": 349525
+    },
+    {
+      "id": "dbl_slash",
+      "random_samples": 20000,
+      "random_agree": 20000,
+      "random_accepted": 17811,
+      "exhaustive_max_len": 18,
+      "exhaustive_strings": 524287,
+      "exhaustive_agree": 524287
+    },
+    {
+      "id": "union_keywords",
+      "random_samples": 20000,
+      "random_agree": 20000,
+      "random_accepted": 0,
+      "exhaustive_max_len": 4,
+      "exhaustive_strings": 245411,
+      "exhaustive_agree": 245411
+    }
+  ],
+  "examples": [
+    {
+      "url": "https://www.google.com/",
+      "label": "benign",
+      "score": 0,
+      "classification": "Low Risk",
+      "flagged": false,
+      "indicators": []
+    },
+    {
+      "url": "https://github.com/nilay-11",
+      "label": "benign",
+      "score": 0,
+      "classification": "Low Risk",
+      "flagged": false,
+      "indicators": []
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Finite-state_machine",
+      "label": "benign",
+      "score": 0,
+      "classification": "Low Risk",
+      "flagged": false,
+      "indicators": []
+    },
+    {
+      "url": "https://vit.ac.in/academics",
+      "label": "benign",
+      "score": 0,
+      "classification": "Low Risk",
+      "flagged": false,
+      "indicators": []
+    },
+    {
+      "url": "https://docs.python.org/3/library/re.html",
+      "label": "benign",
+      "score": 0,
+      "classification": "Low Risk",
+      "flagged": false,
+      "indicators": []
+    },
+    {
+      "url": "https://www.amazon.in/gp/cart/view.html",
+      "label": "benign",
+      "score": 0,
+      "classification": "Low Risk",
+      "flagged": false,
+      "indicators": []
+    },
+    {
+      "url": "https://stackoverflow.com/questions/tagged/regex",
+      "label": "benign",
+      "score": 0,
+      "classification": "Low Risk",
+      "flagged": false,
+      "indicators": []
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=1",
+      "label": "benign",
+      "score": 0,
+      "classification": "Low Risk",
+      "flagged": false,
+      "indicators": []
+    },
+    {
+      "url": "https://accounts.google.com/signin",
+      "label": "benign",
+      "score": 2,
+      "classification": "Suspicious",
+      "flagged": true,
+      "indicators": [
+        "kw_signin",
+        "kw_account"
+      ]
+    },
+    {
+      "url": "https://www.icicibank.com/",
+      "label": "benign",
+      "score": 1,
+      "classification": "Low Risk",
+      "flagged": false,
+      "indicators": [
+        "kw_bank"
+      ]
+    },
+    {
+      "url": "http://login.example.com/verify-account",
+      "label": "phish",
+      "score": 3,
+      "classification": "Suspicious",
+      "flagged": true,
+      "indicators": [
+        "kw_login",
+        "kw_verify",
+        "kw_account"
+      ]
+    },
+    {
+      "url": "http://login-example.com/verify",
+      "label": "phish",
+      "score": 2,
+      "classification": "Suspicious",
+      "flagged": true,
+      "indicators": [
+        "kw_login",
+        "kw_verify"
+      ]
+    },
+    {
+      "url": "http://192.168.10.5/secure/bank/login.php",
+      "label": "phish",
+      "score": 5,
+      "classification": "High Risk",
+      "flagged": true,
+      "indicators": [
+        "kw_login",
+        "kw_secure",
+        "kw_bank",
+        "ipv4_host"
+      ]
+    },
+    {
+      "url": "http://mybank.com@203.0.113.7/confirm",
+      "label": "phish",
+      "score": 6,
+      "classification": "High Risk",
+      "flagged": true,
+      "indicators": [
+        "kw_bank",
+        "kw_confirm",
+        "at_symbol",
+        "ipv4_host"
+      ]
+    },
+    {
+      "url": "http://secure-update.mybank.verify.example.net/account/login",
+      "label": "phish",
+      "score": 7,
+      "classification": "High Risk",
+      "flagged": true,
+      "indicators": [
+        "kw_login",
+        "kw_verify",
+        "kw_account",
+        "kw_secure",
+        "kw_update",
+        "kw_bank",
+        "many_subdomains"
+      ]
+    },
+    {
+      "url": "https://mybank.example-secure-login.xyz/password/reset?user=abc&token=xyz&step=2&ref=mail",
+      "label": "phish",
+      "score": 6,
+      "classification": "High Risk",
+      "flagged": true,
+      "indicators": [
+        "kw_login",
+        "kw_password",
+        "kw_secure",
+        "kw_bank",
+        "long_url",
+        "special_chars"
+      ]
+    },
+    {
+      "url": "http://xn--mybnk-9qa.example/signin",
+      "label": "phish",
+      "score": 2,
+      "classification": "Suspicious",
+      "flagged": true,
+      "indicators": [
+        "kw_signin",
+        "punycode"
+      ]
+    },
+    {
+      "url": "http://198.51.100.23/~user/account_update.html",
+      "label": "phish",
+      "score": 4,
+      "classification": "High Risk",
+      "flagged": true,
+      "indicators": [
+        "kw_account",
+        "kw_update",
+        "ipv4_host"
+      ]
+    },
+    {
+      "url": "https://example.org//redirect//login.mybank.example/",
+      "label": "phish",
+      "score": 3,
+      "classification": "Suspicious",
+      "flagged": true,
+      "indicators": [
+        "kw_login",
+        "kw_bank",
+        "dbl_slash"
+      ]
+    },
+    {
+      "url": "http://update.mybank.com.account-verify.example.ru/confirm",
+      "label": "phish",
+      "score": 6,
+      "classification": "High Risk",
+      "flagged": true,
+      "indicators": [
+        "kw_verify",
+        "kw_account",
+        "kw_update",
+        "kw_bank",
+        "kw_confirm",
+        "many_subdomains"
+      ]
+    },
+    {
+      "url": "http://bit.ly/3xYzAbc",
+      "label": "phish",
+      "score": 0,
+      "classification": "Low Risk",
+      "flagged": false,
+      "indicators": []
+    },
+    {
+      "url": "https://mybank-support.example.top/help",
+      "label": "phish",
+      "score": 1,
+      "classification": "Low Risk",
+      "flagged": false,
+      "indicators": [
+        "kw_bank"
+      ]
+    }
+  ],
+  "confusion": {
+    "tp": 10,
+    "fn": 2,
+    "fp": 1,
+    "tn": 9
+  },
+  "timing": {
+    "dfa_scan": [
+      {
+        "length": 1000,
+        "ms": 0.389,
+        "us_per_char": 0.389
+      },
+      {
+        "length": 2000,
+        "ms": 0.763,
+        "us_per_char": 0.382
+      },
+      {
+        "length": 4000,
+        "ms": 1.573,
+        "us_per_char": 0.393
+      },
+      {
+        "length": 8000,
+        "ms": 3.165,
+        "us_per_char": 0.396
+      },
+      {
+        "length": 16000,
+        "ms": 6.088,
+        "us_per_char": 0.38
+      }
+    ],
+    "analyse_ms_per_url": 0.323,
+    "patterns_per_url": 13
+  }
+}
